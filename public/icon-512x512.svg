@@ -1,0 +1,5 @@
+<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
+    <rect width="512" height="512" rx="128" fill="#3b82f6"/>
+    <text x="50%" y="50%" font-family="Arial" font-size="128" font-weight="bold" text-anchor="middle" dy=".3em" fill="#ffffff">NB</text>
+    <path d="M 128 179.2 L 179.2 230.4 L 281.6 128 L 332.8 179.2 L 384 230.4 L 384 281.6 C 384 332.8 256 384 256 384 C 256 384 128 332.8 128 281.6 Z" fill="#ffffff" opacity="0.3"/>
+  </svg>

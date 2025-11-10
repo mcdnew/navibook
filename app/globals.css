@@ -1,0 +1,228 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Professional Maritime Color Scheme */
+    --background: 210 20% 98%;         /* Soft off-white with blue undertone */
+    --foreground: 215 25% 20%;         /* Deep navy text */
+    --card: 0 0% 100%;                 /* Pure white cards */
+    --card-foreground: 215 25% 20%;    /* Deep navy */
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 20%;
+    --primary: 205 80% 42%;            /* Ocean blue - professional and nautical */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 190 60% 55%;          /* Turquoise/teal accent */
+    --secondary-foreground: 0 0% 100%;
+    --muted: 210 25% 95%;              /* Very light blue-gray */
+    --muted-foreground: 215 15% 50%;   /* Medium gray-blue */
+    --accent: 185 70% 45%;             /* Deep teal */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 75% 50%;          /* Coral red for alerts */
+    --destructive-foreground: 0 0% 100%;
+    --border: 210 25% 88%;             /* Light blue-gray border */
+    --input: 210 25% 88%;
+    --ring: 205 80% 42%;
+    --radius: 0.75rem;                 /* Slightly more rounded */
+
+    /* Maritime accent colors */
+    --maritime-gold: 45 90% 55%;       /* Golden hour/brass fittings */
+    --maritime-sand: 40 40% 85%;       /* Sandy beach */
+    --wave-blue: 200 90% 60%;          /* Bright ocean wave */
+  }
+
+  .dark {
+    --background: 215 30% 12%;         /* Deep ocean night */
+    --foreground: 210 20% 95%;         /* Off-white text */
+    --card: 215 28% 16%;               /* Slightly lighter cards */
+    --card-foreground: 210 20% 95%;
+    --popover: 215 28% 16%;
+    --popover-foreground: 210 20% 95%;
+    --primary: 200 90% 55%;            /* Bright ocean blue */
+    --primary-foreground: 215 30% 12%;
+    --secondary: 185 60% 50%;          /* Teal accent */
+    --secondary-foreground: 0 0% 100%;
+    --muted: 215 25% 22%;              /* Darker muted */
+    --muted-foreground: 210 15% 65%;
+    --accent: 185 70% 45%;             /* Deep teal */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 70% 55%;          /* Brighter coral */
+    --destructive-foreground: 0 0% 100%;
+    --border: 215 25% 22%;
+    --input: 215 25% 22%;
+    --ring: 200 90% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* PWA and Mobile Optimizations */
+@layer utilities {
+  /* Safe area insets for notched devices (iPhone X, etc.) */
+  .safe-area-inset-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-area-inset-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-area-inset-right {
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Prevent text selection on tap (better UX on mobile) */
+  .tap-target {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
+
+  /* Smooth scrolling for mobile */
+  .mobile-scroll {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  /* Hide scrollbars on mobile */
+  @media (max-width: 768px) {
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  }
+}
+
+/* Touch-friendly tap targets (minimum 44x44px) */
+@media (max-width: 768px) {
+  button,
+  a,
+  input[type="button"],
+  input[type="submit"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Prevent zoom on input focus (iOS) */
+@media (max-width: 768px) {
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="password"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* Pull-to-refresh prevention */
+body {
+  overscroll-behavior-y: contain;
+}
+
+/* PWA display cutout (for notched devices) */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: min(0px, env(safe-area-inset-left));
+    padding-right: min(0px, env(safe-area-inset-right));
+  }
+}
+
+/* Professional Mobile-First Layouts */
+@layer utilities {
+  /* Professional card styling */
+  .maritime-card {
+    @apply bg-card border border-border rounded-xl shadow-sm hover:shadow-md transition-shadow;
+  }
+
+  /* Better button styling */
+  .maritime-button {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-2 font-medium transition-all;
+  }
+
+  /* Stat card improvements */
+  .stat-card {
+    @apply maritime-card p-6;
+    @apply bg-gradient-to-br from-card to-muted/20;
+  }
+}
+
+/* Mobile-specific utilities (outside @layer to use @media) */
+/* Show only on mobile - hide by default */
+.show-mobile {
+  display: none;
+}
+
+/* Force single column on mobile */
+@media (max-width: 768px) {
+  .mobile-single-column > * {
+    width: 100%;
+    grid-column: 1 / -1 !important;
+  }
+
+  /* Stack grid items on mobile */
+  .mobile-stack {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+
+  /* Hide on mobile */
+  .hide-mobile {
+    display: none;
+  }
+
+  /* Show only on mobile */
+  .show-mobile {
+    display: block;
+  }
+}
+
+/* Improve form inputs on mobile */
+@media (max-width: 768px) {
+  input, select, textarea {
+    @apply text-base !important; /* Prevent zoom on iOS */
+    @apply w-full;
+  }
+
+  /* Better spacing on mobile */
+  .container, .max-w-7xl {
+    @apply px-4;
+  }
+
+  /* Stack flex items on mobile */
+  .flex-wrap {
+    @apply flex-col !important;
+  }
+}
+
+/* Professional shadows */
+.shadow-maritime {
+  box-shadow: 0 4px 6px -1px rgba(5, 89, 124, 0.1), 
+              0 2px 4px -1px rgba(5, 89, 124, 0.06);
+}
+
+.shadow-maritime-lg {
+  box-shadow: 0 10px 15px -3px rgba(5, 89, 124, 0.1),
+              0 4px 6px -2px rgba(5, 89, 124, 0.05);
+}
+
+/* Better focus states */
+*:focus-visible {
+  @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
+}

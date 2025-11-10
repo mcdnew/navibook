@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="128" fill="#3b82f6"/>
+  <g fill="#ffffff">
+    <!-- Boat Icon -->
+    <path d="M256 160c-17.7 0-32 14.3-32 32v32h64v-32c0-17.7-14.3-32-32-32z"/>
+    <path d="M128 288l64-32h128l64 32v32c0 35.3-57.3 64-128 64s-128-28.7-128-64v-32z"/>
+    <path d="M256 224l-96 32v16c0 17.7 43 32 96 32s96-14.3 96-32v-16l-96-32z"/>
+    <!-- Wave -->
+    <path opacity="0.3" d="M96 352c16-8 32-8 48 0s32 8 48 0 32-8 48 0 32 8 48 0 32-8 48 0 32 8 48 0 32-8 48 0v16H96v-16z"/>
+  </g>
+  <text x="256" y="440" font-family="Arial, sans-serif" font-size="64" font-weight="bold" text-anchor="middle" fill="#ffffff">NB</text>
+</svg>

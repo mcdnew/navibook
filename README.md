@@ -234,9 +234,10 @@ Proprietary - All Rights Reserved
 
 ## 🆘 Support
 
-- Technical Issues: Check SUPABASE_SETUP.md
+- Technical Issues: Check [SUPABASE_SETUP.md](./SUPABASE_SETUP.md)
+- Database Operations: See [SUPABASE_DATABASE_GUIDE.md](./SUPABASE_DATABASE_GUIDE.md)
 - Feature Requests: Contact admin
-- Bug Reports: Document and report to development team
+- Bug Reports: Document in [BUGS.md](./BUGS.md)
 
 ## 🎯 Roadmap
 

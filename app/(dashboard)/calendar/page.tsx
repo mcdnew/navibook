@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import CalendarClient from './calendar-client'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { cleanupExpiredHolds } from '@/lib/bookings/cleanup'
 
 export default async function CalendarPage() {
   const supabase = await createClient()
@@ -18,10 +19,14 @@ export default async function CalendarPage() {
     .eq('id', user.id)
     .single()
 
-  // Get all bookings for the calendar
+  // Clean up expired holds before fetching bookings
+  await cleanupExpiredHolds(supabase)
+
+  // Get all bookings for the calendar (exclude cancelled bookings)
   let bookingsQuery = supabase
     .from('bookings')
     .select('*, boats(id, name, boat_type)')
+    .neq('status', 'cancelled')
     .order('booking_date', { ascending: true })
 
   // Filter by agent if not admin/manager

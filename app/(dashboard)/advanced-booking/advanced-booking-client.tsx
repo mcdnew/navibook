@@ -248,7 +248,7 @@ export default function AdvancedBookingClient({
                             <SelectValue placeholder="Any boat" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Any boat</SelectItem>
+                            <SelectItem value="all">Any boat</SelectItem>
                             {boats.map((boat) => (
                               <SelectItem key={boat.id} value={boat.id}>
                                 {boat.name}

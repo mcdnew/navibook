@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -30,6 +30,7 @@ export async function POST(request: Request) {
     }
 
     const supabase = await createClient()
+    const supabaseAdmin = createAdminClient()
 
     // Get current user
     const {
@@ -73,7 +74,7 @@ export async function POST(request: Request) {
     }
 
     // Create auth user using admin API
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
@@ -111,7 +112,7 @@ export async function POST(request: Request) {
     if (userError) {
       console.error('User record creation error:', userError)
       // Try to delete the auth user if user record creation failed
-      await supabase.auth.admin.deleteUser(authData.user.id)
+      await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
       return NextResponse.json(
         { error: userError.message || 'Failed to create user record' },
         { status: 500 }

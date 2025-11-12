@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -27,6 +27,7 @@ export async function POST(request: Request) {
     }
 
     const supabase = await createClient()
+    const supabaseAdmin = createAdminClient()
 
     // Get current user
     const {
@@ -91,7 +92,7 @@ export async function POST(request: Request) {
       }
 
       // Update auth email
-      const { error: authError } = await supabase.auth.admin.updateUserById(agentId, {
+      const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(agentId, {
         email,
       })
 

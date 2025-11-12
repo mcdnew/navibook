@@ -180,6 +180,7 @@ CREATE OR REPLACE FUNCTION create_booking_with_hold(
   p_company_id UUID,
   p_boat_id UUID,
   p_agent_id UUID,
+  p_captain_id UUID DEFAULT NULL,
   p_booking_date DATE,
   p_start_time TIME,
   p_duration duration_type,
@@ -189,6 +190,7 @@ CREATE OR REPLACE FUNCTION create_booking_with_hold(
   p_passengers INTEGER DEFAULT 1,
   p_package_type package_type DEFAULT 'charter_only',
   p_total_price DECIMAL(10,2) DEFAULT 0,
+  p_captain_fee DECIMAL(10,2) DEFAULT 0,
   p_deposit_amount DECIMAL(10,2) DEFAULT 0,
   p_notes TEXT DEFAULT NULL
 )
@@ -218,6 +220,7 @@ BEGIN
     company_id,
     boat_id,
     agent_id,
+    captain_id,
     booking_date,
     start_time,
     end_time,
@@ -228,6 +231,7 @@ BEGIN
     passengers,
     package_type,
     total_price,
+    captain_fee,
     deposit_amount,
     status,
     hold_until
@@ -235,6 +239,7 @@ BEGIN
     p_company_id,
     p_boat_id,
     p_agent_id,
+    p_captain_id,
     p_booking_date,
     p_start_time,
     v_end_time,
@@ -245,6 +250,7 @@ BEGIN
     p_passengers,
     p_package_type,
     p_total_price,
+    p_captain_fee,
     p_deposit_amount,
     'pending_hold',
     NOW() + INTERVAL '15 minutes'

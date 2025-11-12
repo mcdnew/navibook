@@ -82,6 +82,11 @@ export default function QuickBookPage() {
   const [loadingBoats, setLoadingBoats] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
+  // Captains
+  const [captains, setCaptains] = useState<any[]>([])
+  const [selectedCaptain, setSelectedCaptain] = useState<string>('')
+  const [captainFee, setCaptainFee] = useState<number>(0)
+
   // Calculated values
   const [totalPrice, setTotalPrice] = useState<number>(0)
   const [commission, setCommission] = useState<number>(0)
@@ -131,6 +136,26 @@ export default function QuickBookPage() {
 
     loadUser()
   }, [router, supabase])
+
+  // Load captains
+  useEffect(() => {
+    async function loadCaptains() {
+      if (!user) return
+
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, first_name, last_name, hourly_rate')
+        .eq('company_id', user.company_id)
+        .eq('role', 'captain')
+        .order('first_name')
+
+      if (!error && data) {
+        setCaptains(data)
+      }
+    }
+
+    loadCaptains()
+  }, [user, supabase])
 
   // Calculate end time based on duration
   const calculateEndTime = (start: string, dur: string): string => {
@@ -223,6 +248,23 @@ export default function QuickBookPage() {
       setCommission(comm)
     }
   }, [selectedBoat, packageType, pricing, user])
+
+  // Calculate captain fee when captain or duration changes
+  useEffect(() => {
+    if (!selectedCaptain) {
+      setCaptainFee(0)
+      return
+    }
+
+    const captain = captains.find(c => c.id === selectedCaptain)
+    if (captain && captain.hourly_rate) {
+      const durationHours = parseInt(duration.replace('h', ''))
+      const fee = captain.hourly_rate * durationHours
+      setCaptainFee(fee)
+    } else {
+      setCaptainFee(0)
+    }
+  }, [selectedCaptain, duration, captains])
 
   // Countdown timer for hold period
   useEffect(() => {
@@ -380,6 +422,7 @@ export default function QuickBookPage() {
         p_company_id: user.company_id,
         p_boat_id: selectedBoat,
         p_agent_id: user.id,
+        p_captain_id: selectedCaptain || null,
         p_booking_date: format(date, 'yyyy-MM-dd'),
         p_start_time: startTime,
         p_duration: duration,
@@ -389,14 +432,10 @@ export default function QuickBookPage() {
         p_passengers: parseInt(passengers),
         p_package_type: packageType,
         p_total_price: totalPrice,
+        p_captain_fee: captainFee,
         p_deposit_amount: parseFloat(depositAmount) || 0,
         p_notes: notes || null
       }
-
-      // Debug logging
-      console.log('Creating booking with data:', bookingData)
-      console.log('Selected boat ID:', selectedBoat, 'Type:', typeof selectedBoat)
-      console.log('Confirm immediately:', confirmImmediately)
 
       // Validate boat ID is a valid UUID
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -414,6 +453,7 @@ export default function QuickBookPage() {
             company_id: user.company_id,
             boat_id: selectedBoat,
             agent_id: user.id,
+            captain_id: selectedCaptain || null,
             booking_date: format(date, 'yyyy-MM-dd'),
             start_time: startTime,
             end_time: endTime,
@@ -424,6 +464,7 @@ export default function QuickBookPage() {
             passengers: parseInt(passengers),
             package_type: packageType,
             total_price: totalPrice,
+            captain_fee: captainFee,
             deposit_amount: parseFloat(depositAmount) || 0,
             notes: notes || null,
             status: 'confirmed',
@@ -526,34 +567,6 @@ export default function QuickBookPage() {
             </Button>
           </div>
         </div>
-
-        {/* Debug Panel */}
-        {process.env.NODE_ENV === 'development' && (
-          <Card className="bg-yellow-50 border-yellow-200">
-            <CardHeader>
-              <CardTitle className="text-sm">Debug Info</CardTitle>
-            </CardHeader>
-            <CardContent className="text-xs space-y-1">
-              <p><strong>Selected Boat ID:</strong> {selectedBoat || 'None'}</p>
-              <p><strong>Selected Boat Name:</strong> {availableBoats.find(b => b.boat_id === selectedBoat)?.boat_name || 'None'}</p>
-              <p><strong>Selected Boat Type:</strong> {typeof selectedBoat}</p>
-              <p><strong>Available Boats Count:</strong> {availableBoats.length}</p>
-              <p><strong>Passengers:</strong> {passengers}</p>
-              <p><strong>Field Errors:</strong> {JSON.stringify(fieldErrors)}</p>
-              <Button
-                onClick={() => {
-                  console.log('🔴 CLEAR button clicked')
-                  setSelectedBoat('')
-                }}
-                size="sm"
-                variant="outline"
-                className="mt-2"
-              >
-                Clear Selection
-              </Button>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Success/Error Messages */}
         {error && (
@@ -774,6 +787,39 @@ export default function QuickBookPage() {
             </CardContent>
           </Card>
 
+          {/* Captain Selection */}
+          {selectedBoat && captains.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Captain</CardTitle>
+                <CardDescription>Select a captain (optional)</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Select value={selectedCaptain} onValueChange={setSelectedCaptain}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="No captain selected" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No captain</SelectItem>
+                    {captains.map((captain) => (
+                      <SelectItem key={captain.id} value={captain.id}>
+                        {captain.first_name} {captain.last_name}
+                        {captain.hourly_rate > 0 && ` - €${captain.hourly_rate}/h`}
+                        {captain.hourly_rate === 0 && ' (Owner - No Charge)'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedCaptain && captainFee > 0 && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Captain cost: €{captainFee.toFixed(2)} ({parseInt(duration.replace('h', ''))}h × €
+                    {captains.find(c => c.id === selectedCaptain)?.hourly_rate}/h)
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Package Selection */}
           {selectedBoat && (
             <Card>
@@ -919,6 +965,12 @@ export default function QuickBookPage() {
                   <span>Total Price:</span>
                   <span className="text-blue-600">€{totalPrice.toFixed(2)}</span>
                 </div>
+                {captainFee > 0 && (
+                  <div className="flex justify-between text-sm text-orange-600">
+                    <span>Captain Cost:</span>
+                    <span className="font-semibold">€{captainFee.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm text-green-600">
                   <span>Your Commission ({user?.commission_percentage}%):</span>
                   <span className="font-semibold">€{commission.toFixed(2)}</span>

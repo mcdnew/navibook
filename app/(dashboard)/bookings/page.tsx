@@ -6,6 +6,7 @@ import Link from 'next/link'
 import BookingsListClient from './bookings-list-client'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Anchor, Plus, ArrowLeft } from 'lucide-react'
+import { cleanupExpiredHolds } from '@/lib/bookings/cleanup'
 
 export default async function BookingsPage() {
   const supabase = await createClient()
@@ -18,6 +19,9 @@ export default async function BookingsPage() {
     .select('role, first_name, company_id')
     .eq('id', user.id)
     .single()
+
+  // Clean up expired holds before fetching bookings
+  await cleanupExpiredHolds(supabase)
 
   // Get bookings based on role
   let query = supabase

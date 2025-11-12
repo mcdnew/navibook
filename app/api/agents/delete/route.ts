@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -10,6 +10,7 @@ export async function POST(request: Request) {
     }
 
     const supabase = await createClient()
+    const supabaseAdmin = createAdminClient()
 
     // Get current user
     const {
@@ -66,7 +67,7 @@ export async function POST(request: Request) {
     }
 
     // Delete auth user
-    const { error: authError } = await supabase.auth.admin.deleteUser(agentId)
+    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(agentId)
 
     if (authError) {
       console.error('Auth user deletion error:', authError)

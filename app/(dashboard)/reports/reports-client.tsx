@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Popover,
   PopoverContent,
@@ -41,6 +42,9 @@ import {
   Ship,
   Package,
   Award,
+  LineChart as LineChartIcon,
+  BarChart3,
+  PieChart as PieChartIcon,
 } from 'lucide-react'
 
 type Booking = {
@@ -50,6 +54,7 @@ type Booking = {
   end_time: string
   duration: string
   total_price: number
+  captain_fee: number
   status: string
   package_type: string
   agent_id: string
@@ -122,13 +127,34 @@ export default function ReportsClient({ bookings }: ReportsClientProps) {
     })
   }, [bookings, dateFrom, dateTo])
 
-  // Revenue calculations
+  // Revenue and cost calculations
   const revenueData = useMemo(() => {
     const confirmed = filteredBookings.filter(b => b.status === 'confirmed' || b.status === 'completed')
     const totalRevenue = confirmed.reduce((sum, b) => sum + b.total_price, 0)
     const avgBookingValue = confirmed.length > 0 ? totalRevenue / confirmed.length : 0
 
-    return { totalRevenue, avgBookingValue, confirmedCount: confirmed.length }
+    // Cost breakdown
+    const totalCaptainCosts = confirmed.reduce((sum, b) => sum + (b.captain_fee || 0), 0)
+    const totalCommissions = confirmed.reduce((sum, b) => {
+      if (!b.agents || !b.agent_id) return sum
+      return sum + (b.total_price * b.agents.commission_percentage) / 100
+    }, 0)
+    const totalCosts = totalCaptainCosts + totalCommissions
+
+    // Profit analysis
+    const netProfit = totalRevenue - totalCosts
+    const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0
+
+    return {
+      totalRevenue,
+      avgBookingValue,
+      confirmedCount: confirmed.length,
+      totalCaptainCosts,
+      totalCommissions,
+      totalCosts,
+      netProfit,
+      profitMargin
+    }
   }, [filteredBookings])
 
   // Daily revenue chart data
@@ -146,10 +172,35 @@ export default function ReportsClient({ bookings }: ReportsClientProps) {
       .sort((a, b) => a.date.localeCompare(b.date))
   }, [filteredBookings])
 
+  // Daily profit trend
+  const dailyProfitData = useMemo(() => {
+    const dailyMap = new Map<string, { date: string; profit: number; margin: number }>()
+
+    filteredBookings
+      .filter(b => b.status === 'confirmed' || b.status === 'completed')
+      .forEach(b => {
+        const date = b.booking_date
+        const existing = dailyMap.get(date) || { date, profit: 0, margin: 0 }
+
+        const captainCost = b.captain_fee || 0
+        const commission = b.agents ? (b.total_price * b.agents.commission_percentage) / 100 : 0
+        const profit = b.total_price - captainCost - commission
+
+        existing.profit += profit
+
+        dailyMap.set(date, existing)
+      })
+
+    return Array.from(dailyMap.values()).sort((a, b) => a.date.localeCompare(b.date))
+  }, [filteredBookings])
+
   // Booking statistics by boat
   const boatStats = useMemo(() => {
     const boatMap = new Map<string, { name: string; count: number; revenue: number }>()
     filteredBookings.forEach(b => {
+      // Skip bookings without boat data
+      if (!b.boats || !b.boat_id) return
+
       const key = b.boat_id
       const existing = boatMap.get(key) || { name: b.boats.name, count: 0, revenue: 0 }
       existing.count++
@@ -166,6 +217,9 @@ export default function ReportsClient({ bookings }: ReportsClientProps) {
   const agentStats = useMemo(() => {
     const agentMap = new Map<string, { name: string; count: number; revenue: number; commission: number }>()
     filteredBookings.forEach(b => {
+      // Skip bookings without agent data
+      if (!b.agents || !b.agent_id) return
+
       const key = b.agent_id
       const name = `${b.agents.first_name} ${b.agents.last_name}`
       const existing = agentMap.get(key) || { name, count: 0, revenue: 0, commission: 0 }
@@ -205,6 +259,9 @@ export default function ReportsClient({ bookings }: ReportsClientProps) {
     filteredBookings
       .filter(b => b.status === 'confirmed' || b.status === 'completed')
       .forEach(b => {
+        // Skip bookings without boat data
+        if (!b.boats || !b.boat_id) return
+
         const key = b.boat_id
         const existing = boatDaysMap.get(key) || {
           name: b.boats.name,
@@ -238,18 +295,92 @@ export default function ReportsClient({ bookings }: ReportsClientProps) {
     }))
   }, [filteredBookings])
 
+  // Cost composition for pie chart
+  const costComposition = useMemo(() => {
+    const data = []
+    if (revenueData.totalCaptainCosts > 0) {
+      data.push({ name: 'Captain Costs', value: revenueData.totalCaptainCosts, color: '#FF8042' })
+    }
+    if (revenueData.totalCommissions > 0) {
+      data.push({ name: 'Agent Commissions', value: revenueData.totalCommissions, color: '#00C49F' })
+    }
+    if (revenueData.netProfit > 0) {
+      data.push({ name: 'Net Profit', value: revenueData.netProfit, color: '#0088FE' })
+    }
+    return data
+  }, [revenueData])
+
+  // Revenue vs Costs trend
+  const revenueCostsTrend = useMemo(() => {
+    const dailyMap = new Map<string, { date: string; revenue: number; costs: number; profit: number }>()
+
+    filteredBookings
+      .filter(b => b.status === 'confirmed' || b.status === 'completed')
+      .forEach(b => {
+        const date = b.booking_date
+        const existing = dailyMap.get(date) || { date, revenue: 0, costs: 0, profit: 0 }
+
+        existing.revenue += b.total_price
+
+        const captainCost = b.captain_fee || 0
+        const commission = b.agents ? (b.total_price * b.agents.commission_percentage) / 100 : 0
+        existing.costs += captainCost + commission
+        existing.profit += b.total_price - captainCost - commission
+
+        dailyMap.set(date, existing)
+      })
+
+    return Array.from(dailyMap.values()).sort((a, b) => a.date.localeCompare(b.date))
+  }, [filteredBookings])
+
   const handleExport = (type: 'csv' | 'pdf') => {
     if (type === 'csv') {
-      // Export to CSV
-      const headers = ['Date', 'Customer', 'Boat', 'Agent', 'Package', 'Status', 'Revenue']
-      const rows = filteredBookings.map(b => [
-        b.booking_date,
-        '', // customer name not in this data
-        b.boats.name,
-        `${b.agents.first_name} ${b.agents.last_name}`,
-        b.package_type,
-        b.status,
-        b.total_price.toFixed(2),
+      // Comprehensive CSV export with all cost details
+      const headers = [
+        'Date', 'Boat', 'Agent', 'Agent Commission %', 'Package', 'Status',
+        'Revenue', 'Captain Cost', 'Commission Cost', 'Total Costs', 'Net Profit', 'Profit Margin %'
+      ]
+
+      const rows = filteredBookings.map(b => {
+        const captainCost = b.captain_fee || 0
+        const commissionPercent = b.agents?.commission_percentage || 0
+        const commissionCost = b.total_price * (commissionPercent / 100)
+        const totalCosts = captainCost + commissionCost
+        const netProfit = b.total_price - totalCosts
+        const profitMargin = b.total_price > 0 ? (netProfit / b.total_price) * 100 : 0
+
+        return [
+          b.booking_date,
+          b.boats?.name || 'N/A',
+          b.agents ? `${b.agents.first_name} ${b.agents.last_name}` : 'N/A',
+          commissionPercent.toFixed(0) + '%',
+          b.package_type,
+          b.status,
+          b.total_price.toFixed(2),
+          captainCost.toFixed(2),
+          commissionCost.toFixed(2),
+          totalCosts.toFixed(2),
+          netProfit.toFixed(2),
+          profitMargin.toFixed(1) + '%',
+        ]
+      })
+
+      // Add summary row
+      rows.push([])
+      rows.push(['SUMMARY', '', '', '', '', '', '', '', '', '', '', ''])
+      rows.push([
+        'Total Revenue',
+        '',
+        '',
+        '',
+        '',
+        '',
+        revenueData.totalRevenue.toFixed(2),
+        revenueData.totalCaptainCosts.toFixed(2),
+        revenueData.totalCommissions.toFixed(2),
+        revenueData.totalCosts.toFixed(2),
+        revenueData.netProfit.toFixed(2),
+        revenueData.profitMargin.toFixed(1) + '%'
       ])
 
       const csv = [headers, ...rows].map(row => row.join(',')).join('\n')
@@ -257,7 +388,7 @@ export default function ReportsClient({ bookings }: ReportsClientProps) {
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `report-${format(dateFrom, 'yyyy-MM-dd')}-to-${format(dateTo, 'yyyy-MM-dd')}.csv`
+      a.download = `business-report-${format(dateFrom, 'yyyy-MM-dd')}-to-${format(dateTo, 'yyyy-MM-dd')}.csv`
       a.click()
     } else {
       // PDF export would require a library like jsPDF
@@ -335,7 +466,7 @@ export default function ReportsClient({ bookings }: ReportsClientProps) {
       </Card>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -397,25 +528,273 @@ export default function ReportsClient({ bookings }: ReportsClientProps) {
             </p>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Ship className="w-4 h-4" />
+              Captain Costs
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-orange-600">
+              €{revenueData.totalCaptainCosts.toFixed(2)}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              operational costs
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <DollarSign className="w-4 h-4" />
+              Total Costs
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-red-600">
+              €{revenueData.totalCosts.toFixed(2)}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              captain + commissions
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-green-600" />
+              Net Profit
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-green-600">
+              €{revenueData.netProfit.toFixed(2)}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              after all costs
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Package className="w-4 h-4 text-blue-600" />
+              Profit Margin
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-blue-600">
+              {revenueData.profitMargin.toFixed(1)}%
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              of total revenue
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Daily Revenue Chart */}
+      {/* Financial Analytics - Tabbed Charts */}
       <Card>
         <CardHeader>
-          <CardTitle>Daily Revenue Trend</CardTitle>
-          <CardDescription>Revenue from confirmed and completed bookings</CardDescription>
+          <CardTitle>Financial Analytics</CardTitle>
+          <CardDescription>Visual insights into revenue, costs, and profitability trends</CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={dailyRevenueData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip formatter={(value) => `€${Number(value).toFixed(2)}`} />
-              <Legend />
-              <Line type="monotone" dataKey="revenue" stroke="#8884d8" name="Revenue (€)" />
-            </LineChart>
-          </ResponsiveContainer>
+          <Tabs defaultValue="revenue" className="w-full">
+            <TabsList className="grid w-full grid-cols-4 mb-6">
+              <TabsTrigger value="revenue" className="flex items-center gap-2">
+                <LineChartIcon className="w-4 h-4" />
+                Revenue Evolution
+              </TabsTrigger>
+              <TabsTrigger value="comparison" className="flex items-center gap-2">
+                <BarChart3 className="w-4 h-4" />
+                Revenue vs Costs
+              </TabsTrigger>
+              <TabsTrigger value="profit" className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4" />
+                Profit Trend
+              </TabsTrigger>
+              <TabsTrigger value="breakdown" className="flex items-center gap-2">
+                <PieChartIcon className="w-4 h-4" />
+                Cost Breakdown
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Revenue Evolution Tab */}
+            <TabsContent value="revenue" className="space-y-4">
+              <div className="text-sm text-muted-foreground">
+                Track daily revenue trends from confirmed and completed bookings
+              </div>
+              <ResponsiveContainer width="100%" height={350}>
+                <LineChart data={dailyRevenueData}>
+                  <defs>
+                    <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#0088FE" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#0088FE" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                  <XAxis
+                    dataKey="date"
+                    stroke="#888"
+                    style={{ fontSize: '12px' }}
+                  />
+                  <YAxis
+                    stroke="#888"
+                    style={{ fontSize: '12px' }}
+                    tickFormatter={(value) => `€${value}`}
+                  />
+                  <Tooltip
+                    formatter={(value) => [`€${Number(value).toFixed(2)}`, 'Revenue']}
+                    contentStyle={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                      border: '1px solid #ccc',
+                      borderRadius: '8px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                    }}
+                  />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke="#0088FE"
+                    strokeWidth={3}
+                    dot={{ fill: '#0088FE', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6 }}
+                    name="Daily Revenue (€)"
+                    fill="url(#revenueGradient)"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </TabsContent>
+
+            {/* Revenue vs Costs Tab */}
+            <TabsContent value="comparison" className="space-y-4">
+              <div className="text-sm text-muted-foreground">
+                Compare daily revenue against operational costs and net profit
+              </div>
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart data={revenueCostsTrend}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                  <XAxis
+                    dataKey="date"
+                    stroke="#888"
+                    style={{ fontSize: '12px' }}
+                  />
+                  <YAxis
+                    stroke="#888"
+                    style={{ fontSize: '12px' }}
+                    tickFormatter={(value) => `€${value}`}
+                  />
+                  <Tooltip
+                    formatter={(value) => `€${Number(value).toFixed(2)}`}
+                    contentStyle={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                      border: '1px solid #ccc',
+                      borderRadius: '8px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                    }}
+                  />
+                  <Legend />
+                  <Bar dataKey="revenue" fill="#0088FE" name="Revenue" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="costs" fill="#FF8042" name="Total Costs" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="profit" fill="#00C49F" name="Net Profit" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </TabsContent>
+
+            {/* Profit Trend Tab */}
+            <TabsContent value="profit" className="space-y-4">
+              <div className="text-sm text-muted-foreground">
+                Monitor net profit trends after deducting all operational costs
+              </div>
+              <ResponsiveContainer width="100%" height={350}>
+                <LineChart data={dailyProfitData}>
+                  <defs>
+                    <linearGradient id="profitGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#00C49F" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#00C49F" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                  <XAxis
+                    dataKey="date"
+                    stroke="#888"
+                    style={{ fontSize: '12px' }}
+                  />
+                  <YAxis
+                    stroke="#888"
+                    style={{ fontSize: '12px' }}
+                    tickFormatter={(value) => `€${value}`}
+                  />
+                  <Tooltip
+                    formatter={(value) => [`€${Number(value).toFixed(2)}`, 'Net Profit']}
+                    contentStyle={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                      border: '1px solid #ccc',
+                      borderRadius: '8px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                    }}
+                  />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="profit"
+                    stroke="#00C49F"
+                    strokeWidth={3}
+                    dot={{ fill: '#00C49F', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6 }}
+                    name="Daily Net Profit (€)"
+                    fill="url(#profitGradient)"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </TabsContent>
+
+            {/* Cost Breakdown Tab */}
+            <TabsContent value="breakdown" className="space-y-4">
+              <div className="text-sm text-muted-foreground">
+                Visualize how revenue is distributed between costs and profit
+              </div>
+              <ResponsiveContainer width="100%" height={350}>
+                <PieChart>
+                  <Pie
+                    data={costComposition}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={true}
+                    label={(entry) => `${entry.name}: €${entry.value.toFixed(0)} (${((entry.value / revenueData.totalRevenue) * 100).toFixed(1)}%)`}
+                    outerRadius={110}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {costComposition.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value) => `€${Number(value).toFixed(2)}`}
+                    contentStyle={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                      border: '1px solid #ccc',
+                      borderRadius: '8px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                    }}
+                  />
+                  <Legend
+                    verticalAlign="bottom"
+                    height={36}
+                    iconType="circle"
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 

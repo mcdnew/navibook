@@ -24,6 +24,7 @@ export default function FleetManagementClient({ boats }: FleetManagementClientPr
   const router = useRouter()
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [toggleStatusDialogOpen, setToggleStatusDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedBoat, setSelectedBoat] = useState<any>(null)
   const [loading, setLoading] = useState(false)
@@ -33,9 +34,48 @@ export default function FleetManagementClient({ boats }: FleetManagementClientPr
     setEditDialogOpen(true)
   }
 
+  const handleToggleStatus = (boat: any) => {
+    setSelectedBoat(boat)
+    setToggleStatusDialogOpen(true)
+  }
+
   const handleDelete = (boat: any) => {
     setSelectedBoat(boat)
     setDeleteDialogOpen(true)
+  }
+
+  const confirmToggleStatus = async () => {
+    if (!selectedBoat) return
+
+    setLoading(true)
+    const newStatus = !selectedBoat.is_active
+    try {
+      const response = await fetch('/api/boats/toggle-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ boatId: selectedBoat.id, isActive: newStatus }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || `Failed to ${newStatus ? 'activate' : 'deactivate'} boat`)
+      }
+
+      toast.success(newStatus ? 'Boat Activated' : 'Boat Deactivated', {
+        description: `${selectedBoat.name} has been ${newStatus ? 'activated' : 'deactivated'}.`,
+      })
+
+      setToggleStatusDialogOpen(false)
+      setSelectedBoat(null)
+      router.refresh()
+    } catch (error: any) {
+      toast.error('Failed to Update Status', {
+        description: error.message,
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
   const confirmDelete = async () => {
@@ -43,27 +83,25 @@ export default function FleetManagementClient({ boats }: FleetManagementClientPr
 
     setLoading(true)
     try {
-      const response = await fetch('/api/boats/deactivate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ boatId: selectedBoat.id }),
+      const response = await fetch(`/api/boats/delete?id=${selectedBoat.id}`, {
+        method: 'DELETE',
       })
 
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to deactivate boat')
+        throw new Error(data.error || 'Failed to delete boat')
       }
 
-      toast.success('Boat Deactivated', {
-        description: `${selectedBoat.name} has been deactivated.`,
+      toast.success('Boat Deleted', {
+        description: `${selectedBoat.name} has been permanently deleted.`,
       })
 
       setDeleteDialogOpen(false)
       setSelectedBoat(null)
       router.refresh()
     } catch (error: any) {
-      toast.error('Failed to Deactivate', {
+      toast.error('Failed to Delete', {
         description: error.message,
       })
     } finally {
@@ -146,13 +184,26 @@ export default function FleetManagementClient({ boats }: FleetManagementClientPr
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleDelete(boat)}
-                  className="text-red-600 hover:bg-red-50 border-red-200"
-                  disabled={!boat.is_active}
+                  onClick={() => handleToggleStatus(boat)}
+                  className={
+                    boat.is_active
+                      ? 'text-orange-600 hover:bg-orange-50 border-orange-200'
+                      : 'text-green-600 hover:bg-green-50 border-green-200'
+                  }
                 >
-                  <Trash2 className="w-4 h-4 mr-1" />
-                  {boat.is_active ? 'Deactivate' : 'Inactive'}
+                  {boat.is_active ? 'Deactivate' : 'Reactivate'}
                 </Button>
+                {!boat.is_active && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDelete(boat)}
+                    className="text-red-600 hover:bg-red-50 border-red-200"
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Delete
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -195,15 +246,56 @@ export default function FleetManagementClient({ boats }: FleetManagementClientPr
         />
       )}
 
-      {/* Delete Confirmation Dialog */}
+      {/* Toggle Status Confirmation Dialog */}
+      <Dialog open={toggleStatusDialogOpen} onOpenChange={setToggleStatusDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {selectedBoat?.is_active ? 'Deactivate Boat' : 'Reactivate Boat'}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedBoat?.is_active
+                ? `Are you sure you want to deactivate "${selectedBoat?.name}"? This will prevent it from being booked but preserve all existing bookings and history.`
+                : `Are you sure you want to reactivate "${selectedBoat?.name}"? This will make it available for new bookings.`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setToggleStatusDialogOpen(false)
+                setSelectedBoat(null)
+              }}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant={selectedBoat?.is_active ? 'destructive' : 'default'}
+              onClick={confirmToggleStatus}
+              disabled={loading}
+            >
+              {loading
+                ? selectedBoat?.is_active
+                  ? 'Deactivating...'
+                  : 'Reactivating...'
+                : selectedBoat?.is_active
+                ? 'Deactivate Boat'
+                : 'Reactivate Boat'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Permanent Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Deactivate Boat</DialogTitle>
+            <DialogTitle>Permanently Delete Boat</DialogTitle>
             <DialogDescription>
-              Are you sure you want to deactivate "{selectedBoat?.name}"? This will
-              prevent it from being booked but preserve all existing bookings and
-              history.
+              Are you sure you want to permanently delete "{selectedBoat?.name}"?
+              This action cannot be undone. The boat can only be deleted if it has no
+              bookings associated with it.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -217,12 +309,8 @@ export default function FleetManagementClient({ boats }: FleetManagementClientPr
             >
               Cancel
             </Button>
-            <Button
-              variant="destructive"
-              onClick={confirmDelete}
-              disabled={loading}
-            >
-              {loading ? 'Deactivating...' : 'Deactivate Boat'}
+            <Button variant="destructive" onClick={confirmDelete} disabled={loading}>
+              {loading ? 'Deleting...' : 'Delete Permanently'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -18,7 +18,8 @@ import {
   LayoutGrid,
   Zap,
   LogOut,
-  Ban
+  Ban,
+  Clock
 } from 'lucide-react'
 
 export default async function DashboardPage() {
@@ -35,6 +36,25 @@ export default async function DashboardPage() {
     .select('*, companies(name)')
     .eq('id', user.id)
     .single()
+
+  // Check if user is a captain
+  const isCaptain = userRecord?.role === 'captain'
+
+  // Fetch captain-specific data if captain
+  let captainCharters = null
+  if (isCaptain) {
+    const today = new Date().toISOString().split('T')[0]
+    const { data } = await supabase
+      .from('bookings')
+      .select('*, boats(name, boat_type), agent:users!bookings_agent_id_fkey(first_name, last_name)')
+      .eq('captain_id', user.id)
+      .gte('booking_date', today)
+      .order('booking_date', { ascending: true })
+      .order('start_time', { ascending: true })
+      .limit(10)
+
+    captainCharters = data
+  }
 
   const { data: boats } = await supabase
     .from('boats')
@@ -117,8 +137,96 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
+        {/* Captain-Specific Section */}
+        {isCaptain && (
+          <>
+            {/* Today's Charters */}
+            <Card className="maritime-card border-blue-200">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Anchor className="w-5 h-5 text-blue-600" />
+                  Your Upcoming Charters
+                </CardTitle>
+                <CardDescription>Your assigned charters for the next 7 days</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {captainCharters && captainCharters.length > 0 ? (
+                  <div className="space-y-3">
+                    {captainCharters.map((charter) => {
+                      const isToday = charter.booking_date === new Date().toISOString().split('T')[0]
+                      return (
+                        <div
+                          key={charter.id}
+                          className={`p-4 border-2 rounded-lg hover:border-primary/50 transition-colors ${
+                            isToday ? 'bg-blue-50 border-blue-300' : 'border-border'
+                          }`}
+                        >
+                          {isToday && (
+                            <div className="mb-2">
+                              <span className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
+                                <Clock className="w-3 h-3" />
+                                TODAY
+                              </span>
+                            </div>
+                          )}
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-1">Date & Time</p>
+                              <p className="font-semibold text-sm">
+                                {new Date(charter.booking_date).toLocaleDateString('en-US', {
+                                  weekday: 'short',
+                                  month: 'short',
+                                  day: 'numeric'
+                                })}
+                              </p>
+                              <p className="text-sm text-muted-foreground flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {charter.start_time} - {charter.end_time}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-1">Boat & Passengers</p>
+                              <p className="font-semibold text-sm flex items-center gap-1">
+                                <Ship className="w-3 h-3" />
+                                {charter.boats?.name}
+                              </p>
+                              <p className="text-sm text-muted-foreground flex items-center gap-1">
+                                <Users className="w-3 h-3" />
+                                {charter.passengers} passengers
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-1">Customer</p>
+                              <p className="font-semibold text-sm">{charter.customer_name}</p>
+                              <p className="text-sm text-muted-foreground">{charter.customer_phone}</p>
+                            </div>
+                          </div>
+                          {charter.notes && (
+                            <div className="mt-3 pt-3 border-t">
+                              <p className="text-xs text-muted-foreground mb-1">Special Requests</p>
+                              <p className="text-sm">{charter.notes}</p>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <Anchor className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+                    <p className="text-sm text-muted-foreground">
+                      No upcoming charters assigned
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </>
+        )}
+
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mobile-stack">
+        {!isCaptain && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mobile-stack">
           <Card className="stat-card">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
@@ -169,8 +277,10 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+        )}
 
         {/* Recent Bookings */}
+        {!isCaptain && (
         <Card className="maritime-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -216,6 +326,7 @@ export default async function DashboardPage() {
             )}
           </CardContent>
         </Card>
+        )}
 
         {/* Quick Actions */}
         <Card className="maritime-card">
@@ -261,6 +372,12 @@ export default async function DashboardPage() {
               <a href="/blocked-slots">
                 <Ban className="w-4 h-4" />
                 <span>Blocked Slots</span>
+              </a>
+            </Button>
+            <Button variant="outline" className="justify-start gap-2 h-auto py-3" asChild>
+              <a href="/waitlist">
+                <Clock className="w-4 h-4" />
+                <span>Waitlist</span>
               </a>
             </Button>
             <Button variant="outline" className="justify-start gap-2 h-auto py-3" asChild>

@@ -92,15 +92,17 @@ export async function POST(request: Request) {
     // Log the reschedule in booking history
     const { error: historyError } = await supabase.from('booking_history').insert({
       booking_id: bookingId,
+      user_id: user.id,
       action: 'rescheduled',
-      changed_by: user.id,
-      changes: {
-        old_date: currentBooking.booking_date,
-        old_start_time: currentBooking.start_time,
-        old_end_time: currentBooking.end_time,
-        new_date: newDate,
-        new_start_time: newStartTime,
-        new_end_time: newEndTime,
+      old_data: {
+        booking_date: currentBooking.booking_date,
+        start_time: currentBooking.start_time,
+        end_time: currentBooking.end_time,
+      },
+      new_data: {
+        booking_date: newDate,
+        start_time: newStartTime,
+        end_time: newEndTime,
       },
     })
 

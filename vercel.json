@@ -1,8 +1,4 @@
 {
-  "crons": [
-    {
-      "path": "/api/cron/cleanup-holds",
-      "schedule": "*/5 * * * *"
-    }
-  ]
+  "_comment": "Cron jobs disabled by default. Enable when ENABLE_CRON_JOBS=true in production",
+  "crons": []
 }

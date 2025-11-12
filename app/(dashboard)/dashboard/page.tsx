@@ -4,6 +4,7 @@ import { logout } from '@/app/(auth)/actions'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { ManualCleanupButton } from '@/components/manual-cleanup-button'
 import {
   Anchor,
   Calendar,
@@ -81,6 +82,9 @@ export default async function DashboardPage() {
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
+            {(userRecord.role === 'admin' || userRecord.role === 'office_staff') && (
+              <ManualCleanupButton />
+            )}
             <form action={logout}>
               <Button variant="outline" type="submit" className="gap-2">
                 <LogOut className="w-4 h-4" />

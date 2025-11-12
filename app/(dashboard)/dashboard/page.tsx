@@ -268,7 +268,7 @@ export default async function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-2">
-                    Today's Charters
+                    Today&apos;s Charters
                   </p>
                   <p className="text-4xl font-bold text-primary">
                     {bookings?.filter(b => b.booking_date === new Date().toISOString().split('T')[0]).length || 0}

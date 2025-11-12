@@ -182,7 +182,7 @@ export default function AdvancedBookingClient({
                     <DialogHeader>
                       <DialogTitle>Add Customer to Waitlist</DialogTitle>
                       <DialogDescription>
-                        Add a customer who's interested in booking when availability opens up
+                        Add a customer who&apos;s interested in booking when availability opens up
                       </DialogDescription>
                     </DialogHeader>
 

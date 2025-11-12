@@ -388,7 +388,7 @@ export default function BlockedSlotsClient({ boats }: BlockedSlotsClientProps) {
               <Ban className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
               <p className="text-muted-foreground mb-2">No blocked slots found</p>
               <p className="text-sm text-muted-foreground">
-                Click "Add Block" to create one
+                Click &quot;Add Block&quot; to create one
               </p>
             </div>
           ) : (

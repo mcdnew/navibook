@@ -363,7 +363,7 @@ export default function PortalClient({ token }: { token: string }) {
                     <DialogHeader>
                       <DialogTitle>Request Booking Change</DialogTitle>
                       <DialogDescription>
-                        Submit a request to modify your booking. We'll review it and get back to you
+                        Submit a request to modify your booking. We&apos;ll review it and get back to you
                         soon.
                       </DialogDescription>
                     </DialogHeader>

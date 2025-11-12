@@ -37,7 +37,7 @@ export default async function MyBookingsPage() {
 
         <div className="p-8 bg-white rounded-lg border-2 border-dashed border-gray-300 text-center space-y-4">
           <p className="text-4xl">⛵</p>
-          <h2 className="text-xl font-semibold">Captain's View</h2>
+          <h2 className="text-xl font-semibold">Captain&apos;s View</h2>
           <p className="text-muted-foreground">
             View and manage your assigned charters.
           </p>

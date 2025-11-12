@@ -293,7 +293,7 @@ export default function FleetManagementClient({ boats }: FleetManagementClientPr
           <DialogHeader>
             <DialogTitle>Permanently Delete Boat</DialogTitle>
             <DialogDescription>
-              Are you sure you want to permanently delete "{selectedBoat?.name}"?
+              Are you sure you want to permanently delete &quot;{selectedBoat?.name}&quot;?
               This action cannot be undone. The boat can only be deleted if it has no
               bookings associated with it.
             </DialogDescription>

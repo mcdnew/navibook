@@ -234,7 +234,7 @@ export default function BookingsListClient({
               <span className="text-muted-foreground">Active filters:</span>
               {searchQuery && (
                 <span className="bg-primary/10 text-primary px-3 py-1 rounded-full font-medium inline-flex items-center gap-1">
-                  Search: "{searchQuery}"
+                  Search: &quot;{searchQuery}&quot;
                 </span>
               )}
               {boatFilter !== 'all' && (

@@ -298,8 +298,8 @@ export default function WaitlistClient({ waitlist, boats }: WaitlistClientProps)
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Waitlist Entry</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete the waitlist entry for "
-              {selectedEntry?.customer_name}"? This action cannot be undone.
+              Are you sure you want to delete the waitlist entry for &quot;
+              {selectedEntry?.customer_name}&quot;? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

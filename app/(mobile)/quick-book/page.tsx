@@ -825,7 +825,7 @@ export default function QuickBookPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Package</CardTitle>
-                <CardDescription>Choose what's included</CardDescription>
+                <CardDescription>Choose what&apos;s included</CardDescription>
               </CardHeader>
               <CardContent>
                 <Select value={packageType} onValueChange={setPackageType}>

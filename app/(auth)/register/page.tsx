@@ -133,7 +133,7 @@ export default function RegisterPage() {
 
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
               <p className="text-xs text-amber-800">
-                New agents will be created with 'regular_agent' role and 10% commission rate.
+                New agents will be created with &apos;regular_agent&apos; role and 10% commission rate.
                 Contact your administrator to change permissions.
               </p>
             </div>

@@ -310,7 +310,7 @@ export default function CalendarClient({ bookings, boats }: CalendarClientProps)
   )
 
   // Handle event click
-  const onSelectEvent = useCallback((event: CalendarEvent) => {
+  const onSelectEvent = useCallback((event: CalendarEvent, e: React.SyntheticEvent) => {
     setSelectedEvent(event)
     setDialogOpen(true)
   }, [])

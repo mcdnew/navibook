@@ -71,7 +71,7 @@ export default async function PaymentsPage() {
           </div>
         </div>
 
-        <PaymentsClient bookings={bookings || []} />
+        <PaymentsClient bookings={(bookings as any) || []} />
       </div>
     </div>
   )

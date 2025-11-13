@@ -159,8 +159,9 @@ export default function CalendarClient({ bookings, boats }: CalendarClientProps)
 
   // Event style getter
   const eventStyleGetter = useCallback(
-    (event: CalendarEvent) => {
-      const booking = event.resource
+    (event: object) => {
+      const calendarEvent = event as CalendarEvent
+      const booking = calendarEvent.resource
       let colors
 
       if (colorBy === 'boat') {

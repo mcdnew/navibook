@@ -44,7 +44,7 @@ export default function WaitlistEditDialog({
     customerEmail: '',
     customerPhone: '',
     preferredDate: '',
-    boatId: '',
+    boatId: 'any',
     passengers: '',
     status: 'active',
     notes: '',
@@ -57,7 +57,7 @@ export default function WaitlistEditDialog({
         customerEmail: entry.customer_email || '',
         customerPhone: entry.customer_phone || '',
         preferredDate: entry.preferred_date || '',
-        boatId: entry.boat_id || '',
+        boatId: entry.boat_id || 'any',
         passengers: entry.passengers?.toString() || '',
         status: entry.status || 'active',
         notes: entry.notes || '',
@@ -78,7 +78,10 @@ export default function WaitlistEditDialog({
       const response = await fetch(`/api/waitlist/${entry.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          boatId: formData.boatId === 'any' ? '' : formData.boatId,
+        }),
       })
 
       const data = await response.json()
@@ -194,7 +197,7 @@ export default function WaitlistEditDialog({
                   <SelectValue placeholder="Any boat" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Any boat</SelectItem>
+                  <SelectItem value="any">Any boat</SelectItem>
                   {boats.map((boat) => (
                     <SelectItem key={boat.id} value={boat.id}>
                       {boat.name}

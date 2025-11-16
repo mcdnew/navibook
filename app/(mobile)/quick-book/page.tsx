@@ -84,7 +84,7 @@ export default function QuickBookPage() {
 
   // Captains
   const [captains, setCaptains] = useState<any[]>([])
-  const [selectedCaptain, setSelectedCaptain] = useState<string>('')
+  const [selectedCaptain, setSelectedCaptain] = useState<string>('none')
   const [captainFee, setCaptainFee] = useState<number>(0)
 
   // Calculated values
@@ -251,7 +251,7 @@ export default function QuickBookPage() {
 
   // Calculate captain fee when captain or duration changes
   useEffect(() => {
-    if (!selectedCaptain) {
+    if (!selectedCaptain || selectedCaptain === 'none') {
       setCaptainFee(0)
       return
     }
@@ -422,7 +422,7 @@ export default function QuickBookPage() {
         p_company_id: user.company_id,
         p_boat_id: selectedBoat,
         p_agent_id: user.id,
-        p_captain_id: selectedCaptain || null,
+        p_captain_id: selectedCaptain && selectedCaptain !== 'none' ? selectedCaptain : null,
         p_booking_date: format(date, 'yyyy-MM-dd'),
         p_start_time: startTime,
         p_duration: duration,
@@ -453,7 +453,7 @@ export default function QuickBookPage() {
             company_id: user.company_id,
             boat_id: selectedBoat,
             agent_id: user.id,
-            captain_id: selectedCaptain || null,
+            captain_id: selectedCaptain && selectedCaptain !== 'none' ? selectedCaptain : null,
             booking_date: format(date, 'yyyy-MM-dd'),
             start_time: startTime,
             end_time: endTime,
@@ -800,7 +800,7 @@ export default function QuickBookPage() {
                     <SelectValue placeholder="No captain selected" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No captain</SelectItem>
+                    <SelectItem value="none">No captain</SelectItem>
                     {captains.map((captain) => (
                       <SelectItem key={captain.id} value={captain.id}>
                         {captain.first_name} {captain.last_name}
@@ -810,7 +810,7 @@ export default function QuickBookPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                {selectedCaptain && captainFee > 0 && (
+                {selectedCaptain && selectedCaptain !== 'none' && captainFee > 0 && (
                   <p className="text-sm text-muted-foreground mt-2">
                     Captain cost: €{captainFee.toFixed(2)} ({parseInt(duration.replace('h', ''))}h × €
                     {captains.find(c => c.id === selectedCaptain)?.hourly_rate}/h)
@@ -1187,6 +1187,7 @@ export default function QuickBookPage() {
                     setHoldUntil(null)
                     // Reset form
                     setSelectedBoat('')
+                    setSelectedCaptain('none')
                     setCustomerName('')
                     setCustomerPhone('')
                     setCustomerEmail('')

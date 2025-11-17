@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { ManualCleanupButton } from '@/components/manual-cleanup-button'
+import DashboardBookingsTabs from './dashboard-bookings-tabs'
 import {
   Anchor,
   Calendar,
@@ -283,54 +284,8 @@ export default async function DashboardPage() {
         </div>
         )}
 
-        {/* Recent Bookings */}
-        {!isCaptain && (
-        <Card className="maritime-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Anchor className="w-5 h-5 text-primary" />
-              Recent Bookings
-            </CardTitle>
-            <CardDescription>Latest upcoming bookings</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {bookings && bookings.length > 0 ? (
-              <div className="space-y-3">
-                {bookings.map((booking) => (
-                  <div
-                    key={booking.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-border rounded-lg hover:border-primary/50 transition-colors gap-3"
-                  >
-                    <div className="flex-1">
-                      <p className="font-semibold text-foreground">{booking.customer_name}</p>
-                      <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
-                        <Calendar className="w-3.5 h-3.5" />
-                        {booking.booking_date} at {booking.start_time}
-                      </p>
-                    </div>
-                    <span className={`inline-flex px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide ${
-                      booking.status === 'confirmed'
-                        ? 'bg-secondary/20 text-secondary-foreground'
-                        : booking.status === 'pending_hold'
-                        ? 'bg-accent/20 text-accent-foreground'
-                        : 'bg-muted text-muted-foreground'
-                    }`}>
-                      {booking.status.replace('_', ' ')}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Anchor className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-                <p className="text-sm text-muted-foreground">
-                  No upcoming bookings
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-        )}
+        {/* Bookings Overview - Tabbed Interface */}
+        {!isCaptain && <DashboardBookingsTabs />}
 
         {/* Quick Actions */}
         <Card className="maritime-card">

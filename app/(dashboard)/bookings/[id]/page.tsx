@@ -25,6 +25,7 @@ import {
   UserX,
 } from 'lucide-react'
 import BookingActions from './booking-actions'
+import BookingHistoryTimeline from './booking-history-timeline'
 
 interface BookingHistoryEntry {
   id: string
@@ -34,6 +35,11 @@ interface BookingHistoryEntry {
   notes: string | null
   old_data: any
   new_data: any
+  users?: {
+    first_name: string
+    last_name: string
+    email: string
+  } | null
 }
 
 export default async function BookingDetailPage({
@@ -93,10 +99,17 @@ export default async function BookingDetailPage({
     redirect('/bookings')
   }
 
-  // Fetch booking history
+  // Fetch booking history with user information
   const { data: history } = await supabase
     .from('booking_history')
-    .select('*')
+    .select(`
+      *,
+      users:user_id (
+        first_name,
+        last_name,
+        email
+      )
+    `)
     .eq('booking_id', params.id)
     .order('created_at', { ascending: false })
 
@@ -276,42 +289,7 @@ export default async function BookingDetailPage({
                 <CardDescription>Timeline of all changes to this booking</CardDescription>
               </CardHeader>
               <CardContent>
-                {history && history.length > 0 ? (
-                  <div className="space-y-4">
-                    {history.map((entry: BookingHistoryEntry, index: number) => (
-                      <div key={entry.id} className="flex gap-4">
-                        <div className="flex flex-col items-center">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                            entry.action === 'created' ? 'bg-green-100' :
-                            entry.action === 'updated' ? 'bg-blue-100' :
-                            entry.action === 'confirmed' ? 'bg-green-100' :
-                            entry.action === 'cancelled' ? 'bg-red-100' :
-                            'bg-gray-100'
-                          }`}>
-                            {entry.action === 'created' ? '✓' :
-                             entry.action === 'updated' ? '↻' :
-                             entry.action === 'confirmed' ? '✓' :
-                             entry.action === 'cancelled' ? '✗' : '•'}
-                          </div>
-                          {index < history.length - 1 && (
-                            <div className="w-px h-12 bg-gray-200"></div>
-                          )}
-                        </div>
-                        <div className="flex-1 pb-8">
-                          <p className="font-medium capitalize">{entry.action}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {format(new Date(entry.created_at), 'MMM d, yyyy • h:mm a')}
-                          </p>
-                          {entry.notes && (
-                            <p className="text-sm mt-1 text-gray-600">{entry.notes}</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No history available</p>
-                )}
+                <BookingHistoryTimeline history={history || []} />
               </CardContent>
             </Card>
           </div>

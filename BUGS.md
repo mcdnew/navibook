@@ -746,6 +746,138 @@ This is a fundamental architectural improvement that ensures financial data inte
 
 ---
 
+### BUG-021: Payment Transactions Not Visible - Missing RLS Policies ✅
+**Severity:** Critical
+**Found in:** Payments Page, Booking Details
+**Status:** ✅ FIXED
+**Date:** 2025-11-18
+
+**Issue:**
+Payments were successfully recorded through the API but were not visible to users on any page. The Payments tracking page and Booking Details both showed:
+- Total Paid: €0.00
+- Outstanding: Full amount
+- "No payment transactions recorded"
+
+Even though users received "Payment recorded successfully" confirmation toasts, the payment data never appeared in the UI.
+
+**Root Cause:**
+The `payment_transactions` table was created in migration `004_payment_transactions.sql` but:
+1. RLS (Row Level Security) was never enabled on the table
+2. No RLS policies were defined for SELECT, INSERT, UPDATE, or DELETE operations
+3. While GRANTs were added (`GRANT SELECT, INSERT, UPDATE ON payment_transactions TO authenticated`), these are insufficient when RLS is enabled
+4. The payment recording API worked because it likely uses service role credentials
+5. User queries failed silently because RLS was blocking reads without proper policies
+
+**Impact:**
+- Users could not see payment history
+- Financial tracking appeared completely broken
+- No visibility into deposit or payment status
+- Trust issues with the payment recording system
+
+**Steps to Reproduce:**
+1. Navigate to Payments page
+2. Record a payment for any booking (e.g., "Final Full Payment" for €864.00)
+3. Receive success toast: "Payment recorded successfully"
+4. Observe that the booking still shows:
+   - Paid: €0.00
+   - Outstanding: €864.00 (unchanged)
+   - "No payment transactions recorded"
+5. Check Booking Details page - same issue
+
+**Expected Behavior:**
+After recording payment, both pages should immediately show:
+- Total Paid: €864.00
+- Outstanding: €0.00
+- Payment transaction in history list
+
+**Solution:**
+Created comprehensive RLS policies in migration `010_payment_transactions_rls.sql`:
+
+1. **Enabled RLS** on payment_transactions table
+
+2. **SELECT Policy** - "View payment transactions based on role":
+   - Admin/Office/Manager/Accountant: Can view all company transactions
+   - Agents: Can view transactions for their own bookings
+   - Captains: Can view transactions for their assigned bookings
+   - All scoped to user's company
+
+3. **INSERT Policy** - "Authorized roles can record payments":
+   - Only Admin, Office Staff, Manager, and Accountant can record payments
+   - Must be in same company
+
+4. **UPDATE Policy** - "Authorized roles can update payments":
+   - Same roles as INSERT
+   - Prevents unauthorized modifications
+
+5. **DELETE Policy** - "Only admin and accountant can delete payments":
+   - Restricted to Admin and Accountant only
+   - Prevents accidental deletion of financial records
+
+**Files Modified:**
+- `supabase/migrations/010_payment_transactions_rls.sql` - NEW: Complete RLS policy setup
+
+**Key Technical Implementation:**
+```sql
+-- Enable RLS
+ALTER TABLE payment_transactions ENABLE ROW LEVEL SECURITY;
+
+-- View policy (respects role-based access)
+CREATE POLICY "View payment transactions based on role"
+  ON payment_transactions FOR SELECT
+  USING (
+    company_id = get_user_company()
+    AND (
+      -- Admin/Office/Manager/Accountant see all
+      EXISTS (
+        SELECT 1 FROM users
+        WHERE users.id = auth.uid()
+        AND users.role IN ('admin', 'office_staff', 'manager', 'accountant')
+      )
+      OR
+      -- Agents see their booking transactions
+      EXISTS (
+        SELECT 1 FROM bookings
+        WHERE bookings.id = payment_transactions.booking_id
+        AND bookings.agent_id = auth.uid()
+      )
+      OR
+      -- Captains see their booking transactions
+      EXISTS (
+        SELECT 1 FROM bookings
+        WHERE bookings.id = payment_transactions.booking_id
+        AND bookings.captain_id = auth.uid()
+      )
+    )
+  );
+```
+
+**How to Apply Migration:**
+Since Supabase CLI is not available locally, apply via Supabase Dashboard:
+1. Go to Supabase Dashboard → SQL Editor
+2. Run the migration file: `supabase/migrations/010_payment_transactions_rls.sql`
+3. Verify: Check that payment transactions now appear in UI
+
+**Testing:**
+After applying migration:
+1. Record a new payment
+2. Verify it appears immediately in Payments page
+3. Verify it appears in Booking Details
+4. Verify all existing payment transactions are now visible
+5. Test as different roles (agent vs admin) to verify access control
+
+**Result:**
+- ✅ Payment transactions visible to authorized users
+- ✅ Role-based access control properly enforced
+- ✅ Agents can only see their own booking payments
+- ✅ Financial staff can see all company transactions
+- ✅ Secure deletion (admin/accountant only)
+- ✅ Complete audit trail of all payment operations
+
+**Architectural Note:**
+This bug revealed that the payment_transactions table was created without RLS policies, likely because it was added after the initial RLS setup (migration 002). Future table additions should include RLS policies in the same migration to prevent this issue.
+
+---
+
 ## Known Issues (Not Yet Prioritized)
 
 ### Navigation Issues

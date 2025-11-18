@@ -60,8 +60,13 @@ export default function WaitlistClient({ waitlist, boats }: WaitlistClientProps)
   const [selectedEntry, setSelectedEntry] = useState<any>(null)
   const [loading, setLoading] = useState(false)
 
-  // Filter waitlist
+  // Filter waitlist (automatically exclude converted entries - they're archived)
   const filteredWaitlist = waitlist.filter((entry) => {
+    // Always exclude converted entries
+    if (entry.status === 'converted') {
+      return false
+    }
+
     const matchesSearch =
       entry.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       entry.customer_phone.toLowerCase().includes(searchTerm.toLowerCase())
@@ -143,7 +148,6 @@ export default function WaitlistClient({ waitlist, boats }: WaitlistClientProps)
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="contacted">Contacted</SelectItem>
-                <SelectItem value="converted">Converted</SelectItem>
                 <SelectItem value="cancelled">Cancelled</SelectItem>
                 <SelectItem value="expired">Expired</SelectItem>
               </SelectContent>

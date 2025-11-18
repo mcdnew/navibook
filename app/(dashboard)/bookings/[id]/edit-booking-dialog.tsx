@@ -39,6 +39,7 @@ export default function EditBookingDialog({
   const router = useRouter()
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
+  const [captains, setCaptains] = useState<any[]>([])
 
   // Form state
   const [customerName, setCustomerName] = useState(booking.customer_name)
@@ -46,10 +47,42 @@ export default function EditBookingDialog({
   const [customerEmail, setCustomerEmail] = useState(booking.customer_email || '')
   const [passengers, setPassengers] = useState(booking.passengers.toString())
   const [packageType, setPackageType] = useState(booking.package_type)
+  const [captainId, setCaptainId] = useState(booking.captain_id || 'none')
   const [depositAmount, setDepositAmount] = useState(booking.deposit_amount.toString())
   const [notes, setNotes] = useState(booking.notes || '')
   const [totalPrice, setTotalPrice] = useState(booking.total_price)
   const [loadingPrice, setLoadingPrice] = useState(false)
+
+  // Load captains on mount
+  useEffect(() => {
+    async function loadCaptains() {
+      const { data: userData } = await supabase.auth.getUser()
+      if (!userData.user) return
+
+      const { data: userRecord } = await supabase
+        .from('users')
+        .select('company_id')
+        .eq('id', userData.user.id)
+        .single()
+
+      if (!userRecord) return
+
+      const { data: captainsData } = await supabase
+        .from('users')
+        .select('id, first_name, last_name, hourly_rate')
+        .eq('company_id', userRecord.company_id)
+        .eq('role', 'captain')
+        .order('first_name')
+
+      if (captainsData) {
+        setCaptains(captainsData)
+      }
+    }
+
+    if (open) {
+      loadCaptains()
+    }
+  }, [open, supabase])
 
   // Fetch pricing when package type changes
   useEffect(() => {
@@ -124,6 +157,7 @@ export default function EditBookingDialog({
           customerEmail: customerEmail.trim() || null,
           passengers: passengersNum,
           packageType,
+          captainId: captainId === 'none' ? null : captainId,
           totalPrice,
           depositAmount: depositNum,
           notes: notes.trim() || null,
@@ -152,12 +186,14 @@ export default function EditBookingDialog({
   }
 
   const hasChanges = () => {
+    const originalCaptainId = booking.captain_id || 'none'
     return (
       customerName !== booking.customer_name ||
       customerPhone !== booking.customer_phone ||
       customerEmail !== (booking.customer_email || '') ||
       passengers !== booking.passengers.toString() ||
       packageType !== booking.package_type ||
+      captainId !== originalCaptainId ||
       totalPrice !== booking.total_price ||
       depositAmount !== booking.deposit_amount.toString() ||
       notes !== (booking.notes || '')
@@ -266,6 +302,31 @@ export default function EditBookingDialog({
               </div>
             </div>
           </div>
+
+          {/* Captain Selection */}
+          {captains.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="font-medium text-sm">Captain Assignment</h3>
+              <div>
+                <Label htmlFor="captain">Captain (Optional)</Label>
+                <Select value={captainId} onValueChange={setCaptainId} disabled={loading}>
+                  <SelectTrigger id="captain">
+                    <SelectValue placeholder="No captain assigned" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No Captain</SelectItem>
+                    {captains.map((captain) => (
+                      <SelectItem key={captain.id} value={captain.id}>
+                        {captain.first_name} {captain.last_name}
+                        {captain.hourly_rate > 0 && ` - €${captain.hourly_rate}/h`}
+                        {captain.hourly_rate === 0 && ' (Owner - No Charge)'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
 
           {/* Package & Pricing */}
           <div className="space-y-4">

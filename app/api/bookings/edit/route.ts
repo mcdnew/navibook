@@ -10,6 +10,7 @@ export async function POST(request: Request) {
       customerEmail,
       passengers,
       packageType,
+      captainId,
       totalPrice,
       depositAmount,
       notes,
@@ -92,6 +93,7 @@ export async function POST(request: Request) {
       customer_email: customerEmail,
       passengers: passengers,
       package_type: packageType,
+      captain_id: captainId,
       deposit_amount: depositAmount,
       notes: notes,
     }

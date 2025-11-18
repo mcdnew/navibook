@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { DollarSign, TrendingUp, TrendingDown, CheckCircle2, AlertCircle } from 'lucide-react'
-import PaymentStatusToggle from './payment-status-toggle'
+import { Button } from '@/components/ui/button'
+import { DollarSign, TrendingUp, TrendingDown, CheckCircle2, Plus } from 'lucide-react'
+import Link from 'next/link'
 
 interface PaymentTransaction {
   id: string
@@ -28,32 +28,23 @@ export default function PricingSummary({
   bookingId,
   totalPrice,
   depositAmount,
-  depositPaid: initialDepositPaid,
+  depositPaid,
   paymentTransactions,
 }: PricingSummaryProps) {
-  const [depositPaid, setDepositPaid] = useState(initialDepositPaid)
-
-  // Sync with server updates (when page refreshes)
-  useEffect(() => {
-    setDepositPaid(initialDepositPaid)
-  }, [initialDepositPaid])
-
   // Calculate ACTUAL paid amount from payment transactions (SOURCE OF TRUTH)
   const actualPaidAmount = paymentTransactions.reduce((sum, pt) => sum + pt.amount, 0)
   const outstandingBalance = totalPrice - actualPaidAmount
   const isFullyPaid = outstandingBalance <= 0
   const paymentProgress = totalPrice > 0 ? (actualPaidAmount / totalPrice) * 100 : 0
 
-  // Check for inconsistency between deposit_paid flag and actual transactions
-  const hasInconsistency = depositPaid && depositAmount > 0 && actualPaidAmount === 0
+  // Calculate if deposit is paid based on actual transactions
+  const isDepositPaid = actualPaidAmount >= depositAmount
+
+  // Check for legacy inconsistency (deposit_paid flag set but no transactions)
+  const hasLegacyInconsistency = depositPaid && depositAmount > 0 && actualPaidAmount === 0
 
   // Format currency
   const formatCurrency = (amount: number) => `€${amount.toFixed(2)}`
-
-  // Handle deposit status change
-  const handleDepositStatusChange = (newStatus: boolean) => {
-    setDepositPaid(newStatus)
-  }
 
   return (
     <Card>
@@ -93,13 +84,13 @@ export default function PricingSummary({
         )}
 
         <div className="space-y-3 pt-2">
-          {/* Inconsistency Warning */}
-          {hasInconsistency && (
+          {/* Legacy Inconsistency Warning */}
+          {hasLegacyInconsistency && (
             <div className="flex items-start gap-2 bg-yellow-50 dark:bg-yellow-950/30 text-yellow-800 dark:text-yellow-400 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800">
-              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <div className="text-xs">
-                <p className="font-semibold">Inconsistency Detected</p>
-                <p className="mt-1">Deposit marked as paid, but no payment transactions recorded. Please record the actual payment in the Payments page for accurate financial tracking.</p>
+                <p className="font-semibold">Note: Deposit marked during booking confirmation</p>
+                <p className="mt-1">This booking has a legacy deposit flag set, but no payment transaction recorded. Please use the "Record Payment" button to record the actual deposit payment for accurate financial tracking.</p>
               </div>
             </div>
           )}
@@ -114,25 +105,33 @@ export default function PricingSummary({
 
           {/* Deposit Required */}
           {depositAmount > 0 && (
-            <>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Deposit Required</span>
-                <span className="font-semibold text-base">
-                  {formatCurrency(depositAmount)}
-                </span>
-              </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">Deposit Required</span>
+              <span className="font-semibold text-base">
+                {formatCurrency(depositAmount)}
+              </span>
+            </div>
+          )}
 
-              {/* Deposit Status (indicator only) */}
-              <div className="flex justify-between items-center bg-muted/50 dark:bg-muted/30 p-3 rounded-lg">
-                <span className="text-sm font-medium text-muted-foreground">Deposit Status (Flag)</span>
-                <PaymentStatusToggle
-                  bookingId={bookingId}
-                  depositPaid={depositPaid}
-                  depositAmount={depositAmount}
-                  onStatusChange={handleDepositStatusChange}
-                />
+          {/* Deposit Status - Read-only calculated from transactions */}
+          {depositAmount > 0 && (
+            <div className="flex justify-between items-center bg-muted/50 dark:bg-muted/30 p-3 rounded-lg">
+              <span className="text-sm font-medium text-muted-foreground">Deposit Status</span>
+              <div className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${
+                isDepositPaid
+                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                  : 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400'
+              }`}>
+                {isDepositPaid ? (
+                  <>
+                    <CheckCircle2 className="w-3 h-3" />
+                    Deposit Paid
+                  </>
+                ) : (
+                  'Deposit Pending'
+                )}
               </div>
-            </>
+            </div>
           )}
 
           {depositAmount === 0 && actualPaidAmount === 0 && (
@@ -200,6 +199,21 @@ export default function PricingSummary({
                 <span>Remaining:</span>
                 <span>{formatCurrency(outstandingBalance)}</span>
               </div>
+            </div>
+          )}
+
+          {/* Record Payment Button */}
+          {outstandingBalance > 0 && (
+            <div className="pt-3">
+              <Button asChild className="w-full" variant="default">
+                <Link href="/payments">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Record Payment
+                </Link>
+              </Button>
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                Go to Payments page to record deposit or final payment
+              </p>
             </div>
           )}
 

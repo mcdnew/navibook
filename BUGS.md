@@ -614,6 +614,138 @@ The UI provides instant feedback while maintaining data consistency through back
 
 ---
 
+### BUG-020: Complete Payment System Redesign - Removed Manual Toggles ✅
+**Severity:** Critical (System Design Flaw)
+**Reported:** 2025-11-18
+**Fixed:** 2025-11-18
+**Commit:** *(Pending)*
+
+**Issue:**
+Deep analysis revealed fundamental flaws in the payment system architecture. The system had TWO separate, unsynced payment tracking mechanisms that created confusion and data inconsistency:
+
+**The Two Systems:**
+1. `deposit_paid` - Boolean flag on bookings table (manually togglable)
+2. `payment_transactions` - Actual payment records with amounts
+
+**How The System Broke:**
+```
+User Flow Example:
+1. Confirm booking with "Mark deposit as paid" checkbox ✓
+2. System sets deposit_paid = true
+3. NO payment transaction created!
+4. Booking Details shows "Deposit Paid"
+5. Payments page shows "Paid: €0.00, Outstanding: €1,152.00"
+6. CRITICAL: Flag says paid, but no money was actually recorded!
+```
+
+**Root Causes Identified:**
+1. **Manual toggle disconnect:** PaymentStatusToggle changed `deposit_paid` flag without creating transactions
+2. **Booking confirmation flaw:** "Mark deposit as paid" checkbox set flag but didn't record actual payment
+3. **Two sources of truth:** Different pages calculated financials differently
+4. **User confusion:** Users could "mark as paid" without recording actual money
+5. **Financial inaccuracy:** Reports based on flags vs. actual transactions showed different numbers
+
+**Architectural Problems:**
+- `deposit_paid` could be true while actual payments = €0
+- No synchronization between flag and transactions
+- Users expected toggle to record payment (it didn't)
+- Inconsistent UX: Toggle in one place, record payment in another
+- No clear workflow for payment recording
+
+**Correct Solution Implemented:**
+
+**1. Single Source of Truth: `payment_transactions`**
+   - ALL financial calculations now use actual payment transactions
+   - `deposit_paid` flag NO LONGER used for calculations
+   - Removed PaymentStatusToggle - no more manual flag toggling
+
+**2. Deposit Status = Calculated Field**
+   ```typescript
+   // Auto-calculated from actual transactions:
+   const isDepositPaid = actualPaidAmount >= depositAmount
+   ```
+   - Read-only badge showing calculated status
+   - Updates automatically when payments are recorded
+   - No manual intervention possible
+
+**3. Removed Confusing Toggles:**
+   - Removed PaymentStatusToggle component from Pricing Summary
+   - Removed ability to manually change deposit_paid
+   - Removed inconsistent payment status API
+
+**4. Clear Payment Recording Workflow:**
+   - Added prominent "Record Payment" button in Booking Details
+   - Links directly to Payments page
+   - Single, consistent interface for recording all payments
+   - Real-time updates across all pages (from BUG-019 fix)
+
+**5. Legacy Data Handling:**
+   - Warning shown for bookings with deposit_paid=true but no transactions
+   - Guides users to record actual payment
+   - Maintains backward compatibility
+
+**New User Experience:**
+```
+Booking Details - Pricing Summary:
+├─ Total Paid: €500.00 (from actual transactions)
+├─ Deposit Required: €200.00
+├─ Deposit Status: ✓ Deposit Paid (auto-calculated, read-only)
+├─ Outstanding Balance: €652.00 (from actual transactions)
+├─ [Record Payment Button] → Links to Payments page
+└─ Payment History:
+   ├─ 2025-11-18 • deposit +€200.00
+   └─ 2025-11-17 • partial +€300.00
+```
+
+**Files Modified:**
+- `app/(dashboard)/bookings/[id]/pricing-summary.tsx` - Major rewrite:
+  * Removed PaymentStatusToggle import and usage
+  * Removed manual state management for deposit_paid
+  * Added calculated isDepositPaid from transactions
+  * Added prominent "Record Payment" button
+  * Added legacy data warning
+  * All calculations from payment_transactions only
+
+**Key Technical Changes:**
+```typescript
+// REMOVED - Manual toggle:
+<PaymentStatusToggle
+  bookingId={bookingId}
+  depositPaid={depositPaid}
+  onStatusChange={handleDepositStatusChange}
+/>
+
+// ADDED - Calculated status (read-only):
+const isDepositPaid = actualPaidAmount >= depositAmount
+
+<div className="...">
+  {isDepositPaid ? '✓ Deposit Paid' : 'Deposit Pending'}
+</div>
+
+// ADDED - Clear payment workflow:
+<Button asChild>
+  <Link href="/payments">
+    <Plus /> Record Payment
+  </Link>
+</Button>
+```
+
+**Result - Consistent Payment System:**
+- ✅ Single source of truth: `payment_transactions`
+- ✅ No more manual flags disconnected from actual money
+- ✅ Deposit status auto-calculated from real transactions
+- ✅ Identical financial data across all pages
+- ✅ Clear, single workflow for recording payments
+- ✅ Real-time updates everywhere
+- ✅ No user confusion about where/how to record payments
+- ✅ Accurate financial reporting always based on actual transactions
+- ✅ Legacy data handled gracefully with warnings
+
+**Impact:**
+This is a fundamental architectural improvement that ensures financial data integrity across the entire application. Users can no longer create inconsistencies by using manual toggles. All payment tracking flows through a single, auditable system.
+
+---
+
 ## Known Issues (Not Yet Prioritized)
 
 ### Navigation Issues

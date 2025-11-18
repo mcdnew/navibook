@@ -85,6 +85,16 @@ export default async function BookingDetailPage({
         id,
         first_name,
         last_name
+      ),
+      payment_transactions (
+        id,
+        amount,
+        payment_type,
+        payment_method,
+        transaction_reference,
+        notes,
+        payment_date,
+        created_at
       )
     `)
     .eq('id', params.id)
@@ -303,6 +313,7 @@ export default async function BookingDetailPage({
               totalPrice={booking.total_price}
               depositAmount={booking.deposit_amount}
               depositPaid={booking.deposit_paid}
+              paymentTransactions={booking.payment_transactions || []}
             />
 
             {/* Commission Info */}

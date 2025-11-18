@@ -2,14 +2,26 @@
 
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { DollarSign, TrendingUp, TrendingDown, CheckCircle2 } from 'lucide-react'
+import { DollarSign, TrendingUp, TrendingDown, CheckCircle2, AlertCircle } from 'lucide-react'
 import PaymentStatusToggle from './payment-status-toggle'
+
+interface PaymentTransaction {
+  id: string
+  amount: number
+  payment_type: string
+  payment_method: string
+  transaction_reference?: string
+  notes?: string
+  payment_date: string
+  created_at: string
+}
 
 interface PricingSummaryProps {
   bookingId: string
   totalPrice: number
   depositAmount: number
   depositPaid: boolean
+  paymentTransactions: PaymentTransaction[]
 }
 
 export default function PricingSummary({
@@ -17,6 +29,7 @@ export default function PricingSummary({
   totalPrice,
   depositAmount,
   depositPaid: initialDepositPaid,
+  paymentTransactions,
 }: PricingSummaryProps) {
   const [depositPaid, setDepositPaid] = useState(initialDepositPaid)
 
@@ -25,11 +38,14 @@ export default function PricingSummary({
     setDepositPaid(initialDepositPaid)
   }, [initialDepositPaid])
 
-  // Calculate outstanding balance
-  const paidAmount = depositPaid ? depositAmount : 0
-  const outstandingBalance = totalPrice - paidAmount
-  const isFullyPaid = outstandingBalance === 0
-  const paymentProgress = totalPrice > 0 ? (paidAmount / totalPrice) * 100 : 0
+  // Calculate ACTUAL paid amount from payment transactions (SOURCE OF TRUTH)
+  const actualPaidAmount = paymentTransactions.reduce((sum, pt) => sum + pt.amount, 0)
+  const outstandingBalance = totalPrice - actualPaidAmount
+  const isFullyPaid = outstandingBalance <= 0
+  const paymentProgress = totalPrice > 0 ? (actualPaidAmount / totalPrice) * 100 : 0
+
+  // Check for inconsistency between deposit_paid flag and actual transactions
+  const hasInconsistency = depositPaid && depositAmount > 0 && actualPaidAmount === 0
 
   // Format currency
   const formatCurrency = (amount: number) => `€${amount.toFixed(2)}`
@@ -77,8 +93,27 @@ export default function PricingSummary({
         )}
 
         <div className="space-y-3 pt-2">
+          {/* Inconsistency Warning */}
+          {hasInconsistency && (
+            <div className="flex items-start gap-2 bg-yellow-50 dark:bg-yellow-950/30 text-yellow-800 dark:text-yellow-400 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <div className="text-xs">
+                <p className="font-semibold">Inconsistency Detected</p>
+                <p className="mt-1">Deposit marked as paid, but no payment transactions recorded. Please record the actual payment in the Payments page for accurate financial tracking.</p>
+              </div>
+            </div>
+          )}
+
+          {/* Actual Paid Amount */}
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">Total Paid</span>
+            <span className="font-semibold text-base text-green-600 dark:text-green-400">
+              {formatCurrency(actualPaidAmount)}
+            </span>
+          </div>
+
           {/* Deposit Required */}
-          {depositAmount > 0 ? (
+          {depositAmount > 0 && (
             <>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">Deposit Required</span>
@@ -87,9 +122,9 @@ export default function PricingSummary({
                 </span>
               </div>
 
-              {/* Deposit Status */}
+              {/* Deposit Status (indicator only) */}
               <div className="flex justify-between items-center bg-muted/50 dark:bg-muted/30 p-3 rounded-lg">
-                <span className="text-sm font-medium text-muted-foreground">Deposit Status</span>
+                <span className="text-sm font-medium text-muted-foreground">Deposit Status (Flag)</span>
                 <PaymentStatusToggle
                   bookingId={bookingId}
                   depositPaid={depositPaid}
@@ -98,7 +133,9 @@ export default function PricingSummary({
                 />
               </div>
             </>
-          ) : (
+          )}
+
+          {depositAmount === 0 && actualPaidAmount === 0 && (
             <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 p-3 rounded-lg">
               <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
               <span className="text-sm font-medium">No deposit required</span>
@@ -148,20 +185,39 @@ export default function PricingSummary({
             </span>
           </div>
 
-          {/* Payment Breakdown (if deposit paid) */}
-          {depositPaid && depositAmount > 0 && !isFullyPaid && (
+          {/* Payment Breakdown (if any payments made) */}
+          {actualPaidAmount > 0 && !isFullyPaid && (
             <div className="text-xs text-muted-foreground space-y-1 pt-2">
               <div className="flex justify-between">
-                <span>Total:</span>
+                <span>Total Price:</span>
                 <span>{formatCurrency(totalPrice)}</span>
               </div>
               <div className="flex justify-between text-green-600 dark:text-green-400">
-                <span>Deposit Paid:</span>
-                <span>-{formatCurrency(depositAmount)}</span>
+                <span>Total Paid:</span>
+                <span>-{formatCurrency(actualPaidAmount)}</span>
               </div>
               <div className="flex justify-between font-semibold text-foreground border-t pt-1">
                 <span>Remaining:</span>
                 <span>{formatCurrency(outstandingBalance)}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Payment Transactions List */}
+          {paymentTransactions.length > 0 && (
+            <div className="pt-3 border-t">
+              <p className="text-xs font-semibold text-muted-foreground mb-2">Payment History</p>
+              <div className="space-y-1">
+                {paymentTransactions.map((transaction) => (
+                  <div key={transaction.id} className="flex justify-between items-center text-xs">
+                    <span className="text-muted-foreground capitalize">
+                      {transaction.payment_date} • {transaction.payment_type.replace(/_/g, ' ')}
+                    </span>
+                    <span className={`font-medium ${transaction.amount >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                      {transaction.amount >= 0 ? '+' : ''}{formatCurrency(transaction.amount)}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           )}

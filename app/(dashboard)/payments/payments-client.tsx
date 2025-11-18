@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -79,8 +79,9 @@ const PAYMENT_TYPES = [
   { value: 'partial_refund', label: 'Partial Refund' },
 ] as const
 
-export default function PaymentsClient({ bookings }: PaymentsClientProps) {
+export default function PaymentsClient({ bookings: initialBookings }: PaymentsClientProps) {
   const router = useRouter()
+  const [bookings, setBookings] = useState<Booking[]>(initialBookings)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState<'all' | 'paid' | 'partial' | 'unpaid'>('all')
   const [recordPaymentOpen, setRecordPaymentOpen] = useState(false)
@@ -98,6 +99,11 @@ export default function PaymentsClient({ bookings }: PaymentsClientProps) {
     notes: '',
     paymentDate: new Date().toISOString().split('T')[0],
   })
+
+  // Sync bookings state with server updates
+  useEffect(() => {
+    setBookings(initialBookings)
+  }, [initialBookings])
 
   // Calculate payment status for each booking
   const bookingsWithPayments: BookingWithPayments[] = useMemo(() => {
@@ -193,6 +199,23 @@ export default function PaymentsClient({ bookings }: PaymentsClientProps) {
         const error = await response.json()
         throw new Error(error.error || 'Failed to record payment')
       }
+
+      const result = await response.json()
+
+      // Update local state immediately with the new payment transaction
+      setBookings((prevBookings) =>
+        prevBookings.map((booking) =>
+          booking.id === selectedBooking.id
+            ? {
+                ...booking,
+                payment_transactions: [
+                  ...(booking.payment_transactions || []),
+                  result.payment,
+                ],
+              }
+            : booking
+        )
+      )
 
       toast.success('Payment recorded successfully')
       setRecordPaymentOpen(false)

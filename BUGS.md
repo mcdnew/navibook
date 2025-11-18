@@ -447,62 +447,170 @@ All elements now have proper contrast in both light and dark modes. Dark theme i
 
 ---
 
-### BUG-018: Outstanding Balance Not Updating on Payment Status Toggle ✅
+### BUG-018: Inconsistent Payment Calculation Between Pages ✅
+**Severity:** Critical
+**Reported:** 2025-11-18
+**Fixed:** 2025-11-18 (Corrected Implementation)
+**Commit:** *(Pending)*
+
+**Issue:**
+The Booking Details page and Payments page showed inconsistent financial data. The Booking Details page used the `deposit_paid` boolean flag to calculate outstanding balance, while the Payments page used actual `payment_transactions`. This created a fundamental inconsistency:
+
+**Scenario demonstrating the problem:**
+1. Go to Booking Details page
+2. Toggle "Deposit Status" to "Paid"
+3. Outstanding Balance decreases (e.g., €1,152 → €652)
+4. Go to Payments page
+5. Same booking shows "Paid: €0.00" and "Outstanding: €1,152.00"
+6. **Inconsistency:** Deposit marked as paid but no actual payment transaction exists!
+
+**Root Cause:**
+The original BUG-018 implementation (now corrected) had a flawed approach:
+- **Booking Details:** Calculated outstanding = total_price - (deposit_paid ? deposit_amount : 0)
+- **Payments Page:** Calculated outstanding = total_price - sum(payment_transactions)
+- `deposit_paid` is just a boolean flag, NOT actual money
+- Toggling the flag didn't create payment transactions
+- Two pages showed different financial realities
+
+**Corrected Solution:**
+**Use `payment_transactions` as the single source of truth for all financial calculations.**
+
+1. **Fetch payment_transactions in Booking Details page:**
+   - Added payment_transactions to booking query
+   - Provides complete payment history
+
+2. **Calculate from actual transactions:**
+   - Total Paid = sum(payment_transactions.amount)
+   - Outstanding = total_price - total_paid
+   - Consistent across all pages
+
+3. **Keep deposit_paid as status indicator only:**
+   - Shows "Deposit Status (Flag): Paid/Unpaid"
+   - Clearly labeled as indicator, not financial data
+   - Useful for quick visual reference
+
+4. **Inconsistency Detection:**
+   - Warns if deposit_paid=true but no transactions exist
+   - Yellow alert: "Deposit marked as paid, but no payment transactions recorded"
+   - Guides users to record actual payments
+
+5. **Enhanced Visual Features:**
+   - **Total Paid** - Calculated from actual transactions (green)
+   - **Payment History** - List of all transactions with dates and amounts
+   - **Payment Progress Bar** - Based on actual paid amount
+   - **Color-Coded Outstanding Balance:**
+     - Green: Fully paid (≤ €0)
+     - Blue: Partial payment (0 < outstanding < total)
+     - Orange: No payment yet (outstanding = total)
+
+**Files Created:**
+- `app/(dashboard)/bookings/[id]/pricing-summary.tsx` - Interactive component with transaction-based calculations
+
+**Files Modified:**
+- `app/(dashboard)/bookings/[id]/page.tsx` - Fetches payment_transactions, passes to PricingSummary
+- `app/(dashboard)/bookings/[id]/payment-status-toggle.tsx` - Added onStatusChange callback
+
+**Key Technical Changes:**
+```typescript
+// WRONG (original implementation):
+const paidAmount = depositPaid ? depositAmount : 0
+const outstandingBalance = totalPrice - paidAmount
+
+// CORRECT (fixed implementation):
+const actualPaidAmount = paymentTransactions.reduce((sum, pt) => sum + pt.amount, 0)
+const outstandingBalance = totalPrice - actualPaidAmount
+```
+
+**Result:**
+- ✅ Booking Details and Payments pages now show identical financial data
+- ✅ Outstanding balance calculated from actual payment transactions
+- ✅ deposit_paid shown as status indicator only
+- ✅ Inconsistency warnings guide users to proper payment recording
+- ✅ Complete payment history visible in Booking Details
+- ✅ Single source of truth for all financial calculations
+
+---
+
+### BUG-019: Payment Tracking Details Not Updating After Recording Payment ✅
 **Severity:** High
 **Reported:** 2025-11-18
 **Fixed:** 2025-11-18
 **Commit:** *(Pending)*
 
 **Issue:**
-When toggling deposit status from unpaid to paid in the Booking Details page, the "Outstanding Balance" field did not update in real-time. Users had to refresh the page to see the correct balance.
+In the Payment Tracking page, when recording a payment for a booking, the summary statistics (Total Outstanding and Total Collected) updated correctly, but the individual booking's payment details did not update in real-time. The booking continued to show the old values for "Paid" and "Outstanding" amounts until the page was manually refreshed.
 
 Example scenario:
-- Total Price: €675.00
-- Deposit Required: €0.00 (or any amount)
-- Deposit Status: Changed from Unpaid → Paid
-- Outstanding Balance: Remained at €675.00 (should have updated to €675.00 - deposit)
+- Daniel Martinez booking shows:
+  - Total: €1,152.00
+  - Paid: €0.00
+  - Outstanding: €1,152.00
+- User clicks "Record Payment" and records €500.00 payment
+- Toast shows "Payment recorded successfully"
+- Summary stats update: Total Outstanding and Total Collected change
+- BUT individual booking still shows:
+  - Paid: €0.00 (should show €500.00)
+  - Outstanding: €1,152.00 (should show €652.00)
 
 **Root Cause:**
-The Pricing Summary section was implemented as part of a server component that:
-1. Received initial `booking.deposit_paid` value from database
-2. Used PaymentStatusToggle client component to update status
-3. PaymentStatusToggle called `router.refresh()` after update
-4. However, the Outstanding Balance calculation used stale server data
-5. The parent component didn't re-render immediately with new data
+The PaymentsClient component received bookings data from the server component as props, but:
+1. Used the props directly in useMemo calculations
+2. When payment was recorded, called `router.refresh()` to trigger server re-fetch
+3. However, the component continued using the stale props data until the server component fully re-rendered
+4. This caused a delay in UI updates despite the database being updated correctly
 
 **Solution:**
-1. Created new `PricingSummary` client component with local state tracking
-2. Updated `PaymentStatusToggle` to accept optional `onStatusChange` callback
-3. Implemented instant UI updates without waiting for server refresh
-4. Added enhanced visual design with smart features:
-   - **Payment Progress Bar** - Visual indicator of payment completion
-   - **Color-Coded States:**
-     - Green: Fully paid
-     - Blue: Partial payment
-     - Orange: No payment yet
-   - **Dynamic Icons:** CheckCircle, TrendingDown, TrendingUp based on status
-   - **Payment Breakdown:** Shows calculation when deposit is paid
-   - **Smooth Transitions:** 300ms transitions for state changes
-   - **Dark Mode Support:** Proper colors for both themes
-
-**Files Created:**
-- `app/(dashboard)/bookings/[id]/pricing-summary.tsx` - Interactive pricing summary component
+1. Added local state management for bookings data in PaymentsClient
+2. Initialize state from props using `useState(initialBookings)`
+3. Added `useEffect` to sync with server updates when props change
+4. Updated `handleRecordPayment` to optimistically update local state immediately:
+   - After successful payment recording, add the new payment transaction to the booking's array
+   - This triggers useMemo recalculation with updated data
+   - UI updates instantly without waiting for server refresh
+5. Server refresh still occurs in background to ensure data consistency
 
 **Files Modified:**
-- `app/(dashboard)/bookings/[id]/payment-status-toggle.tsx` - Added onStatusChange callback
-- `app/(dashboard)/bookings/[id]/page.tsx` - Replaced inline pricing summary with new component
+- `app/(dashboard)/payments/payments-client.tsx`
 
-**Features:**
-- Real-time outstanding balance updates when deposit status changes
-- Visual payment progress bar (0-100%)
-- Color-coded sections based on payment status
-- Conditional display for "No deposit required" bookings
-- Payment breakdown showing Total - Deposit = Remaining
-- Smooth animations and transitions
-- Full dark mode compatibility
+**Technical Changes:**
+```typescript
+// Before: Used props directly
+export default function PaymentsClient({ bookings }: PaymentsClientProps)
+
+// After: Local state with server sync
+export default function PaymentsClient({ bookings: initialBookings }: PaymentsClientProps) {
+  const [bookings, setBookings] = useState<Booking[]>(initialBookings)
+
+  // Sync with server updates
+  useEffect(() => {
+    setBookings(initialBookings)
+  }, [initialBookings])
+
+  // Optimistic update after payment recorded
+  setBookings((prevBookings) =>
+    prevBookings.map((booking) =>
+      booking.id === selectedBooking.id
+        ? {
+            ...booking,
+            payment_transactions: [
+              ...(booking.payment_transactions || []),
+              result.payment,
+            ],
+          }
+        : booking
+    )
+  )
+}
+```
 
 **Result:**
-Outstanding balance now updates instantly when payment status is toggled. Users get immediate visual feedback with enhanced UI that clearly shows payment status, progress, and remaining balance.
+Payment details now update instantly when a payment is recorded. Users see immediate changes to:
+- Individual booking "Paid" amount
+- Individual booking "Outstanding" amount
+- Payment status badge (Unpaid → Partial → Paid)
+- Summary statistics (already worked, now consistent with details)
+
+The UI provides instant feedback while maintaining data consistency through background server refresh.
 
 ---
 

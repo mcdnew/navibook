@@ -26,6 +26,7 @@ import {
 } from 'lucide-react'
 import BookingActions from './booking-actions'
 import BookingHistoryTimeline from './booking-history-timeline'
+import PaymentStatusToggle from './payment-status-toggle'
 
 interface BookingHistoryEntry {
   id: string
@@ -149,7 +150,7 @@ export default async function BookingDetailPage({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+    <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -316,9 +317,11 @@ export default async function BookingDetailPage({
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Deposit Status</span>
-                    <Badge variant={booking.deposit_paid ? 'default' : 'secondary'}>
-                      {booking.deposit_paid ? 'Paid' : 'Unpaid'}
-                    </Badge>
+                    <PaymentStatusToggle
+                      bookingId={booking.id}
+                      depositPaid={booking.deposit_paid}
+                      depositAmount={booking.deposit_amount}
+                    />
                   </div>
                   <div className="flex justify-between items-center pt-2 border-t">
                     <span className="text-sm text-muted-foreground">Outstanding Balance</span>

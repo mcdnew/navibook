@@ -11,6 +11,205 @@ This document tracks all bugs discovered and their resolution status.
 
 ## Fixed Bugs
 
+### BUG-001: Agent/User Creation Failed ✅
+**Severity:** Critical
+**Found in:** Create Agents
+**Status:** ✅ FIXED
+
+**Issue:**
+When trying to create an agent, the system returned "Failed to create agent - User not allowed" error message.
+
+**Steps to Reproduce:**
+1. Try to create a new member (Agent, Power agent, Staff member, Captain, etc)
+
+**Expected:** Create a new member, receive confirmation email from Supabase
+**Actual:** "Failed to create agent User not allowed" error
+
+**Solution:** Created admin client with service role key for auth operations
+
+---
+
+### BUG-002: Pending Reservations Not Expiring ✅
+**Severity:** Critical
+**Found in:** Create Reservation / Bookings / Booking Details
+**Status:** ✅ FIXED
+
+**Issue:**
+Bookings created with pending/hold status showed correct timing (reservation time, remaining, end of hold time), but the reservation would not drop and the timeslot would not be freed once hold time elapsed. Bookings remained in pending status indefinitely.
+
+**Steps to Reproduce:**
+1. Create a new reservation with hold time
+2. Wait for hold time to expire
+
+**Expected:** Timeslot freed and reservation dropped when hold time expires
+**Actual:** Reservation remains in hold status even after expiry
+
+**Solution:** Added cron job to cleanup expired holds every 5 minutes + manual cleanup on page loads
+
+---
+
+### BUG-003: Canceled Reservations Still in Calendar ✅
+**Severity:** Critical
+**Found in:** Reservations / Calendar
+**Status:** ✅ FIXED
+
+**Issue:**
+When canceling a booking, the system indicated it was canceled and timeslot freed, but the reservation did not disappear from the calendar.
+
+**Steps to Reproduce:**
+1. Cancel an existing confirmed reservation
+
+**Expected:** Timeslot freed and booking disappears from calendar
+**Actual:** Booking remains visible in calendar after canceling
+
+**Solution:** Added filter to exclude cancelled bookings from calendar view
+
+---
+
+### BUG-004: Canceled Bookings with Expired Hold Time ✅
+**Severity:** Critical
+**Found in:** Reservations / Calendar
+**Status:** ✅ FIXED
+
+**Issue:**
+When canceling a booking with expired hold time, it showed as canceled but remained in the calendar and it was unclear if the timeslot was truly freed.
+
+**Steps to Reproduce:**
+1. Cancel an existing "on hold" reservation after hold time expired
+
+**Expected:** Timeslot freed automatically on reaching hold limit and disappears from calendar
+**Actual:** Booking remains in calendar even after canceling
+
+**Solution:** Auto-cleanup of expired holds + excluded from calendar
+
+---
+
+### BUG-005: Advanced Booking Page Error ✅
+**Severity:** Critical
+**Found in:** Advanced Booking Page
+**Status:** ✅ FIXED
+
+**Issue:**
+Page returned error and was non-functional.
+
+**Error:**
+```
+Unhandled Runtime Error
+Error: A <Select.Item /> must have a value prop that is not an empty string.
+This is because the Select value can be set to an empty string to clear the selection and show the placeholder.
+```
+
+**Steps to Reproduce:**
+1. Access Advanced Booking Page
+
+**Expected:** Access page and all functionalities
+**Actual:** Page throws error and fails to render
+
+**Solution:** Changed empty string Select.Item value to "all"
+
+---
+
+### BUG-006: Blocked Slots Page Redirecting ✅
+**Severity:** Critical
+**Found in:** Blocked Slots Page
+**Status:** ✅ FIXED
+
+**Issue:**
+Blocked Slots page redirected to Dashboard instead of showing functionality. Unable to block slots/days for maintenance.
+
+**Steps to Reproduce:**
+1. Access Blocked Slots Page
+
+**Expected:** Access page and block slots functionality
+**Actual:** Redirects to Dashboard
+
+**Solution:** Updated role permissions to include admin and manager roles
+
+---
+
+### BUG-007: Notifications Page Error ✅
+**Severity:** Critical
+**Found in:** Notifications Page
+**Status:** ✅ FIXED
+
+**Issue:**
+Page returned build error and was non-functional.
+
+**Error:**
+```
+Build Error: Module not found: Can't resolve '@/components/ui/switch'
+./app/(dashboard)/notifications/notifications-client.tsx:7:1
+```
+
+**Steps to Reproduce:**
+1. Access Notifications Page
+
+**Expected:** Access page and all functionalities
+**Actual:** Build error - module not found
+
+**Solution:** Created missing Switch component and installed @radix-ui/react-switch
+
+---
+
+### BUG-008: Fleet Management - Cannot Reactivate Boats ✅
+**Severity:** Critical
+**Found in:** Fleet Management Page
+**Status:** ✅ FIXED
+
+**Issue:**
+When a boat was deactivated, there was no way to reactivate it.
+
+**Steps to Reproduce:**
+1. Go to Fleet Management
+2. Deactivate a boat
+3. Try to reactivate it
+
+**Expected:** Should be able to reactivate deactivated boats
+**Actual:** Button disabled, no reactivation option
+
+**Solution:** Created toggle-status endpoint and updated UI to allow reactivation
+
+---
+
+### BUG-009: Fleet Management - Cannot Delete Boats ✅
+**Severity:** High
+**Found in:** Fleet Management Page
+**Status:** ✅ FIXED
+
+**Issue:**
+No option to permanently delete boats from the fleet.
+
+**Steps to Reproduce:**
+1. Go to Fleet Management
+2. Look for delete option
+
+**Expected:** Should be able to delete boats that have no bookings
+**Actual:** Only deactivate option available
+
+**Solution:** Added permanent delete API and UI (only for inactive boats with no bookings)
+
+---
+
+### BUG-010: Blocked Slots - Insufficient Permissions ✅
+**Severity:** Critical
+**Found in:** Blocked Slots Page
+**Status:** ✅ FIXED
+
+**Issue:**
+Admin users received "Insufficient permissions" error when trying to create blocked slots.
+
+**Steps to Reproduce:**
+1. Login as admin
+2. Try to create a blocked slot
+
+**Expected:** Admin should be able to create blocked slots
+**Actual:** Returns 403 Insufficient permissions error, then RLS policy violation
+
+**Solution:** Updated API permissions + Fixed RLS policies in database to use 'admin', 'manager', 'power_agent' instead of 'company_admin'
+**Migration:** Applied `009_fix_blocked_slots_rls.sql`
+
+---
+
 ### BUG-011: Booking History Timeline Missing Details ✅
 **Severity:** Critical
 **Reported:** 2025-11-18
@@ -212,9 +411,67 @@ Users could not manage payment status (paid/unpaid) from the "Pricing Summary" s
 
 ---
 
-## Open Bugs
+### BUG-017: Dark Theme Display Improvements ✅
+**Severity:** High
+**Reported:** 2025-11-18
+**Fixed:** 2025-11-18
+**Commit:** *(Pending)*
 
-None currently reported.
+**Issue:**
+Multiple dark theme inconsistencies in Booking Details page:
+1. Action buttons container had bright white background
+2. Special Requests field had white background
+3. Button hover states used light colors incompatible with dark mode
+
+**Solution:**
+
+**Action Buttons Container:**
+- Changed `bg-white` → `bg-card` (line 234 in booking-actions.tsx)
+- Now properly respects dark mode theme
+
+**Special Requests Field:**
+- Changed `bg-gray-50` → `bg-muted` (line 220 in page.tsx)
+- Background now adapts to theme
+
+**Button Styles:**
+- Mark as No-Show: Removed hard-coded light colors, uses default outline variant
+- Edit Booking: Changed to `border-blue-500 text-blue-600 dark:text-blue-400`
+- Customer Portal Link: Changed to `border-purple-500 text-purple-600 dark:text-purple-400`
+
+**Files Modified:**
+- `app/(dashboard)/bookings/[id]/booking-actions.tsx`
+- `app/(dashboard)/bookings/[id]/page.tsx`
+
+**Result:**
+All elements now have proper contrast in both light and dark modes. Dark theme is consistent across the entire Booking Details page.
+
+---
+
+## Known Issues (Not Yet Prioritized)
+
+### Navigation Issues
+**Description:** Difficult navigation between some pages. Users have to pass via Dashboard to get between certain pages (e.g., from Booking Details to Calendar requires going back to Dashboard first).
+
+**Suggested Fix:** Add consistent navigation links across all pages
+
+---
+
+### Quick Book Page Debug Info
+**Status:** ✅ FIXED - Debug info area removed
+
+---
+
+### Quick Book Calendar Alignment
+**Description:** Calendar area looks strange, aligned to the left with free space to the right. This affects rendering on mobile (column not centered).
+
+**Status:** 🔴 OPEN - Needs investigation
+
+---
+
+### Mobile Version Column Layout
+**Description:** Having a centered, "justified" column could give a better "app" feeling. Being able to move left/right and zoom makes this look awkward sometimes.
+
+**Status:** 🔴 OPEN - Needs design review
 
 ---
 

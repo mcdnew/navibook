@@ -231,7 +231,7 @@ export default function BookingActions({ booking, userRole }: BookingActionsProp
 
   return (
     <>
-      <div className="bg-white border rounded-lg p-4">
+      <div className="bg-card border rounded-lg p-4">
         <div className="flex flex-wrap gap-2">
           {canConfirm && (
             <Button
@@ -263,7 +263,6 @@ export default function BookingActions({ booking, userRole }: BookingActionsProp
               onClick={handleNoShow}
               disabled={loading}
               variant="outline"
-              className="border-gray-400 text-gray-700 hover:bg-gray-50"
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -278,7 +277,7 @@ export default function BookingActions({ booking, userRole }: BookingActionsProp
             <Button
               onClick={() => setEditDialogOpen(true)}
               variant="outline"
-              className="border-blue-400 text-blue-700 hover:bg-blue-50"
+              className="border-blue-500 text-blue-600 dark:text-blue-400"
             >
               <Edit className="w-4 h-4 mr-2" />
               Edit Booking
@@ -290,7 +289,7 @@ export default function BookingActions({ booking, userRole }: BookingActionsProp
               onClick={handleGeneratePortalLink}
               disabled={loading}
               variant="outline"
-              className="border-purple-400 text-purple-700 hover:bg-purple-50"
+              className="border-purple-500 text-purple-600 dark:text-purple-400"
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />

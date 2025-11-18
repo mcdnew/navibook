@@ -217,7 +217,7 @@ export default async function BookingDetailPage({
                 {booking.notes && (
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Special Requests</label>
-                    <p className="text-sm bg-gray-50 p-3 rounded-lg mt-1">{booking.notes}</p>
+                    <p className="text-sm bg-muted p-3 rounded-lg mt-1">{booking.notes}</p>
                   </div>
                 )}
               </CardContent>

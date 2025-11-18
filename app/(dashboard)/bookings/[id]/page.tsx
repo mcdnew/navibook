@@ -26,7 +26,7 @@ import {
 } from 'lucide-react'
 import BookingActions from './booking-actions'
 import BookingHistoryTimeline from './booking-history-timeline'
-import PaymentStatusToggle from './payment-status-toggle'
+import PricingSummary from './pricing-summary'
 
 interface BookingHistoryEntry {
   id: string
@@ -298,40 +298,12 @@ export default async function BookingDetailPage({
           {/* Right Column - Financial & Agent Info */}
           <div className="space-y-6">
             {/* Pricing Summary */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="w-5 h-5" />
-                  Pricing Summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center pb-2 border-b">
-                    <span className="text-sm text-muted-foreground">Total Price</span>
-                    <span className="text-2xl font-bold">{formatCurrency(booking.total_price)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Deposit Required</span>
-                    <span className="font-semibold">{formatCurrency(booking.deposit_amount)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Deposit Status</span>
-                    <PaymentStatusToggle
-                      bookingId={booking.id}
-                      depositPaid={booking.deposit_paid}
-                      depositAmount={booking.deposit_amount}
-                    />
-                  </div>
-                  <div className="flex justify-between items-center pt-2 border-t">
-                    <span className="text-sm text-muted-foreground">Outstanding Balance</span>
-                    <span className="font-semibold text-orange-600">
-                      {formatCurrency(booking.total_price - (booking.deposit_paid ? booking.deposit_amount : 0))}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <PricingSummary
+              bookingId={booking.id}
+              totalPrice={booking.total_price}
+              depositAmount={booking.deposit_amount}
+              depositPaid={booking.deposit_paid}
+            />
 
             {/* Commission Info */}
             <Card>

@@ -17,12 +17,14 @@ interface PaymentStatusToggleProps {
   bookingId: string
   depositPaid: boolean
   depositAmount: number
+  onStatusChange?: (newStatus: boolean) => void
 }
 
 export default function PaymentStatusToggle({
   bookingId,
   depositPaid,
   depositAmount,
+  onStatusChange,
 }: PaymentStatusToggleProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -50,6 +52,11 @@ export default function PaymentStatusToggle({
       toast.success('Payment Status Updated', {
         description: `Deposit marked as ${newStatus ? 'paid' : 'unpaid'}`,
       })
+
+      // Notify parent component immediately for instant UI update
+      if (onStatusChange) {
+        onStatusChange(newStatus)
+      }
 
       router.refresh()
     } catch (error: any) {

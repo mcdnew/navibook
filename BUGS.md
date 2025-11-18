@@ -447,6 +447,65 @@ All elements now have proper contrast in both light and dark modes. Dark theme i
 
 ---
 
+### BUG-018: Outstanding Balance Not Updating on Payment Status Toggle ✅
+**Severity:** High
+**Reported:** 2025-11-18
+**Fixed:** 2025-11-18
+**Commit:** *(Pending)*
+
+**Issue:**
+When toggling deposit status from unpaid to paid in the Booking Details page, the "Outstanding Balance" field did not update in real-time. Users had to refresh the page to see the correct balance.
+
+Example scenario:
+- Total Price: €675.00
+- Deposit Required: €0.00 (or any amount)
+- Deposit Status: Changed from Unpaid → Paid
+- Outstanding Balance: Remained at €675.00 (should have updated to €675.00 - deposit)
+
+**Root Cause:**
+The Pricing Summary section was implemented as part of a server component that:
+1. Received initial `booking.deposit_paid` value from database
+2. Used PaymentStatusToggle client component to update status
+3. PaymentStatusToggle called `router.refresh()` after update
+4. However, the Outstanding Balance calculation used stale server data
+5. The parent component didn't re-render immediately with new data
+
+**Solution:**
+1. Created new `PricingSummary` client component with local state tracking
+2. Updated `PaymentStatusToggle` to accept optional `onStatusChange` callback
+3. Implemented instant UI updates without waiting for server refresh
+4. Added enhanced visual design with smart features:
+   - **Payment Progress Bar** - Visual indicator of payment completion
+   - **Color-Coded States:**
+     - Green: Fully paid
+     - Blue: Partial payment
+     - Orange: No payment yet
+   - **Dynamic Icons:** CheckCircle, TrendingDown, TrendingUp based on status
+   - **Payment Breakdown:** Shows calculation when deposit is paid
+   - **Smooth Transitions:** 300ms transitions for state changes
+   - **Dark Mode Support:** Proper colors for both themes
+
+**Files Created:**
+- `app/(dashboard)/bookings/[id]/pricing-summary.tsx` - Interactive pricing summary component
+
+**Files Modified:**
+- `app/(dashboard)/bookings/[id]/payment-status-toggle.tsx` - Added onStatusChange callback
+- `app/(dashboard)/bookings/[id]/page.tsx` - Replaced inline pricing summary with new component
+
+**Features:**
+- Real-time outstanding balance updates when deposit status changes
+- Visual payment progress bar (0-100%)
+- Color-coded sections based on payment status
+- Conditional display for "No deposit required" bookings
+- Payment breakdown showing Total - Deposit = Remaining
+- Smooth animations and transitions
+- Full dark mode compatibility
+
+**Result:**
+Outstanding balance now updates instantly when payment status is toggled. Users get immediate visual feedback with enhanced UI that clearly shows payment status, progress, and remaining balance.
+
+---
+
 ## Known Issues (Not Yet Prioritized)
 
 ### Navigation Issues

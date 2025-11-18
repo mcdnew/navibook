@@ -716,7 +716,7 @@ export default function QuickBookPage() {
                             setSelectedBoat(boat.boat_id)
                           }
                         }}
-                        className={`flex items-center justify-between p-4 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md ${
+                        className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md min-h-[88px] ${
                           selectedBoat === boat.boat_id
                             ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
                             : !meetsCapacity
@@ -727,7 +727,7 @@ export default function QuickBookPage() {
                         }`}
                         style={{ position: 'relative', zIndex: 1 }}
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-start sm:items-center gap-3 flex-1 min-w-0">
                           <input
                             type="radio"
                             name="boat"
@@ -736,48 +736,50 @@ export default function QuickBookPage() {
                             onChange={() => {
                               // Handled by div onClick
                             }}
-                            className="w-4 h-4 pointer-events-none"
+                            className="w-4 h-4 pointer-events-none mt-0.5 sm:mt-0 flex-shrink-0"
                             readOnly
                             tabIndex={-1}
                           />
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <p className="font-semibold">{boat.boat_name}</p>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                              <p className="font-semibold break-words">{boat.boat_name}</p>
                               {isRecommended && (
-                                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full whitespace-nowrap">
                                   Recommended
                                 </span>
                               )}
                               {!meetsCapacity && (
-                                <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">
+                                <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full whitespace-nowrap">
                                   Too Small
                                 </span>
                               )}
                             </div>
-                            <p className="text-sm text-muted-foreground capitalize">
+                            <p className="text-sm text-muted-foreground capitalize break-words">
                               {boat.boat_type} • {boat.capacity} pax
-                              {!meetsCapacity && (
-                                <span className="text-orange-600 ml-1">
-                                  ({passengersNum} passengers need {passengersNum - boat.capacity} more seats)
-                                </span>
-                              )}
                             </p>
+                            {!meetsCapacity && (
+                              <p className="text-xs text-orange-600 mt-1 break-words">
+                                Needs {passengersNum - boat.capacity} more {passengersNum - boat.capacity === 1 ? 'seat' : 'seats'}
+                              </p>
+                            )}
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-bold text-lg">
+                        <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 sm:gap-0 flex-shrink-0 sm:text-right">
+                          <p className="font-bold text-base sm:text-lg">
                             €{boatPrice?.price || 0}
                           </p>
-                          <p className="text-xs text-muted-foreground">
-                            {duration}
-                          </p>
-                          {passengersNum > 0 && (
-                            <p className={`text-xs mt-1 ${
-                              meetsCapacity ? 'text-green-600' : 'text-orange-600'
-                            }`}>
-                              {meetsCapacity ? '✓' : '✗'} {passengersNum} pax
+                          <div className="flex items-center gap-2 sm:flex-col sm:items-end sm:gap-0">
+                            <p className="text-xs text-muted-foreground">
+                              {duration}
                             </p>
-                          )}
+                            {passengersNum > 0 && (
+                              <p className={`text-xs ${
+                                meetsCapacity ? 'text-green-600' : 'text-orange-600'
+                              }`}>
+                                {meetsCapacity ? '✓' : '✗'} {passengersNum} pax
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
                     )

@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button"
 
 function getManualContent() {
   try {
-    const filePath = path.join(process.cwd(), "..", "test_version_manual_navibook.md")
+    const filePath = path.join(process.cwd(), "docs", "test_version_manual_navibook.md")
     return fs.readFileSync(filePath, "utf8")
   } catch {
-    return "Manual file not found. Make sure test_version_manual_navibook.md exists at the project root."
+    return "Manual file not found. Make sure docs/test_version_manual_navibook.md exists inside the project."
   }
 }
 
@@ -45,4 +45,3 @@ export default function TestManualEnPage() {
     </main>
   )
 }
-

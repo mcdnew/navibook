@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button"
 
 function getManualContentEs() {
   try {
-    const filePath = path.join(process.cwd(), "..", "test_version_manual_navibook_es.md")
+    const filePath = path.join(process.cwd(), "docs", "test_version_manual_navibook_es.md")
     return fs.readFileSync(filePath, "utf8")
   } catch {
-    return "No se ha encontrado el archivo de manual en español. Asegúrate de que test_version_manual_navibook_es.md existe en la raíz del proyecto."
+    return "No se ha encontrado el archivo de manual en español. Asegúrate de que docs/test_version_manual_navibook_es.md existe dentro del proyecto."
   }
 }
 
@@ -45,4 +45,3 @@ export default function TestManualEsPage() {
     </main>
   )
 }
-

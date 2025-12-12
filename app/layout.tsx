@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
+import Link from "next/link"
 import "./globals.css"
 import { Toaster } from "@/components/ui/sonner"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -51,6 +52,24 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <div className="w-full bg-blue-50 border-b border-blue-100 text-[11px] md:text-sm text-blue-900">
+            <div className="mx-auto max-w-7xl flex flex-wrap items-center justify-center gap-2 py-2 px-3">
+              <span className="font-medium">Testing manuals:</span>
+              <Link
+                href="/test-manual-en"
+                className="underline-offset-2 hover:underline"
+              >
+                EN
+              </Link>
+              <span className="text-blue-300">/</span>
+              <Link
+                href="/test-manual-es"
+                className="underline-offset-2 hover:underline"
+              >
+                ES
+              </Link>
+            </div>
+          </div>
           {children}
           <Toaster />
         </ThemeProvider>

@@ -2,6 +2,9 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 // This endpoint can be called by a cron job to clean up expired holds
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // It can also be protected with a secret token for security
 export async function GET(request: Request) {
   try {

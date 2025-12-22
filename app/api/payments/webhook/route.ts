@@ -3,6 +3,9 @@ import { headers } from 'next/headers'
 import { constructWebhookEvent } from '@/lib/stripe/stripe-service'
 import { createClient } from '@supabase/supabase-js'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // Disable body parsing, need raw body for signature verification
 export const runtime = 'nodejs'
 

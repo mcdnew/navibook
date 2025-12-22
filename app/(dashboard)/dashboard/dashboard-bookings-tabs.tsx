@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -31,73 +30,29 @@ export default function DashboardBookingsTabs() {
   const [urgentActions, setUrgentActions] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
 
-  const supabase = createClient()
-
   useEffect(() => {
     async function fetchData() {
       setLoading(true)
-      const today = new Date().toISOString().split('T')[0]
+      try {
+        // Fetch data from secure API endpoint that respects role-based access
+        const response = await fetch('/api/bookings/dashboard')
+        if (!response.ok) {
+          console.error('Failed to fetch dashboard bookings')
+          setLoading(false)
+          return
+        }
 
-      // Fetch upcoming bookings (next 10 future bookings)
-      const { data: upcoming } = await supabase
-        .from('bookings')
-        .select('*, boats(name)')
-        .gte('booking_date', today)
-        .order('booking_date', { ascending: true })
-        .order('start_time', { ascending: true})
-        .limit(10)
+        const { upcoming, latest, todaysData, urgentActions } = await response.json()
 
-      setUpcomingBookings(upcoming || [])
-
-      // Fetch latest created bookings (last 10 created regardless of booking date)
-      const { data: latest } = await supabase
-        .from('bookings')
-        .select('*, boats(name)')
-        .order('created_at', { ascending: false })
-        .limit(10)
-
-      setLatestCreated(latest || [])
-
-      // Fetch today's charters
-      const { data: todaysData } = await supabase
-        .from('bookings')
-        .select('*, boats(name)')
-        .eq('booking_date', today)
-        .in('status', ['confirmed', 'pending_hold'])
-        .order('start_time', { ascending: true })
-
-      setTodaysCharters(todaysData || [])
-
-      // Fetch urgent actions
-      // 1. Pending holds expiring soon (within 2 hours)
-      const twoHoursFromNow = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString()
-      const { data: expiringHolds } = await supabase
-        .from('bookings')
-        .select('*, boats(name)')
-        .eq('status', 'pending_hold')
-        .not('hold_until', 'is', null)
-        .lte('hold_until', twoHoursFromNow)
-        .order('hold_until', { ascending: true })
-
-      // 2. Unconfirmed bookings within 24 hours
-      const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-      const { data: unconfirmed } = await supabase
-        .from('bookings')
-        .select('*, boats(name)')
-        .eq('status', 'pending_hold')
-        .gte('booking_date', today)
-        .lte('booking_date', tomorrow)
-        .order('booking_date', { ascending: true })
-        .order('start_time', { ascending: true })
-
-      // Combine and deduplicate urgent items
-      const urgentMap = new Map()
-      ;[...(expiringHolds || []), ...(unconfirmed || [])].forEach(booking => {
-        urgentMap.set(booking.id, booking)
-      })
-
-      setUrgentActions(Array.from(urgentMap.values()))
-      setLoading(false)
+        setUpcomingBookings(upcoming || [])
+        setLatestCreated(latest || [])
+        setTodaysCharters(todaysData || [])
+        setUrgentActions(urgentActions || [])
+      } catch (error) {
+        console.error('Error fetching dashboard bookings:', error)
+      } finally {
+        setLoading(false)
+      }
     }
 
     fetchData()

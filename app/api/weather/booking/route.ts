@@ -26,9 +26,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Fetch weather for the booking date
-    const latitude = 41.3851 // Mediterranean
-    const longitude = 2.1734
+    // Get user's company
+    const { data: userRecord } = await supabase
+      .from('users')
+      .select('company_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!userRecord) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    // Get company location
+    const { data: company } = await supabase
+      .from('companies')
+      .select('latitude, longitude, location_name')
+      .eq('id', userRecord.company_id)
+      .single()
+
+    // Use company coordinates or fallback to default
+    const latitude = company?.latitude || 41.3851 // Default: Barcelona
+    const longitude = company?.longitude || 2.1734
 
     const forecasts = await fetchMarineWeather(latitude, longitude, 7)
 

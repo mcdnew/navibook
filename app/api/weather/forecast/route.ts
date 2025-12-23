@@ -19,11 +19,28 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get user's company to determine location
-    // For now, using default Mediterranean coordinates
-    // In production, companies would have their location stored
-    const latitude = 41.3851 // Barcelona area
-    const longitude = 2.1734
+    // Get user's company
+    const { data: userRecord } = await supabase
+      .from('users')
+      .select('company_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!userRecord) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    // Get company location
+    const { data: company } = await supabase
+      .from('companies')
+      .select('latitude, longitude, location_name')
+      .eq('id', userRecord.company_id)
+      .single()
+
+    // Use company coordinates or fallback to default
+    const latitude = company?.latitude || 41.3851 // Default: Barcelona
+    const longitude = company?.longitude || 2.1734
+    const locationName = company?.location_name || 'Default Location'
 
     // Fetch weather data from Open-Meteo
     const forecasts = await fetchMarineWeather(latitude, longitude, days)
@@ -38,13 +55,7 @@ export async function GET(request: Request) {
       return [9, 12, 15, 18].includes(hour)
     })
 
-    // Get user's company
-    const { data: userRecord } = await supabase
-      .from('users')
-      .select('company_id')
-      .eq('id', user.id)
-      .single()
-
+    // Upsert weather forecasts to database
     if (userRecord) {
       // Upsert weather forecasts
       const weatherData = forecastsToStore.map((f) => ({
@@ -75,7 +86,7 @@ export async function GET(request: Request) {
       location: {
         latitude,
         longitude,
-        name: 'Mediterranean Coast',
+        name: locationName,
       },
     })
   } catch (error: any) {

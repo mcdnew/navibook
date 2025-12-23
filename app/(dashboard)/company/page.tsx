@@ -1,10 +1,23 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Building2, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import LocationSettings from './location-settings'
+
+const LocationSettings = dynamic(() => import('@/app/components/company/location-settings'), {
+  ssr: false,
+  loading: () => (
+    <Card className="maritime-card">
+      <CardContent className="pt-6">
+        <div className="flex items-center justify-center py-8">
+          <p className="text-muted-foreground">Loading location settings...</p>
+        </div>
+      </CardContent>
+    </Card>
+  ),
+})
 
 export default async function CompanySettingsPage() {
   const supabase = await createClient()

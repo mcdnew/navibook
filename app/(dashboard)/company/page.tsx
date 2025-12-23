@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Building2, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import LocationSettings from './location-settings'
+import LocationSettings from '@/app/(dashboard)/company/location-settings'
 
 export default async function CompanySettingsPage() {
   const supabase = await createClient()

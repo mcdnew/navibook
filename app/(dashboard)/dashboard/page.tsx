@@ -21,7 +21,8 @@ import {
   Zap,
   LogOut,
   Ban,
-  Clock
+  Clock,
+  Building2
 } from 'lucide-react'
 
 export default async function DashboardPage() {
@@ -379,6 +380,12 @@ export default async function DashboardPage() {
               <a href="/weather">
                 <CloudSun className="w-4 h-4" />
                 <span>Weather</span>
+              </a>
+            </Button>
+            <Button variant="outline" className="justify-start gap-2 h-auto py-3" asChild>
+              <a href="/company">
+                <Building2 className="w-4 h-4" />
+                <span>Company Settings</span>
               </a>
             </Button>
           </CardContent>

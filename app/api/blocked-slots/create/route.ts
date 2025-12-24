@@ -8,16 +8,39 @@ export async function POST(request: Request) {
   try {
     const {
       boatId,
-      blockedDate,
+      startDate,
+      endDate,
       startTime,
       endTime,
       reason,
       blockType = 'maintenance',
+      // Support legacy single-day format
+      blockedDate,
     } = await request.json()
 
-    if (!blockedDate || !startTime || !endTime || !reason) {
+    // Support both new multi-day and legacy single-day formats
+    const actualStartDate = startDate || blockedDate
+    const actualEndDate = endDate || blockedDate
+
+    if (!actualStartDate || !actualEndDate || !startTime || !endTime || !reason) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing required fields: startDate, endDate, startTime, endTime, reason' },
+        { status: 400 }
+      )
+    }
+
+    // Validate date range
+    if (actualEndDate < actualStartDate) {
+      return NextResponse.json(
+        { error: 'End date must be after or equal to start date' },
+        { status: 400 }
+      )
+    }
+
+    // Validate time format
+    if (!/^\d{2}:\d{2}$/.test(startTime) || !/^\d{2}:\d{2}$/.test(endTime)) {
+      return NextResponse.json(
+        { error: 'Time format must be HH:MM' },
         { status: 400 }
       )
     }
@@ -54,13 +77,15 @@ export async function POST(request: Request) {
       )
     }
 
-    // Create blocked slot
+    // Create blocked slot with multi-day support
     const { data, error } = await supabase
       .from('blocked_slots')
       .insert({
         company_id: userData.company_id,
         boat_id: boatId || null, // null means all boats
-        blocked_date: blockedDate,
+        blocked_date: actualStartDate, // Keep for backward compatibility
+        start_date: actualStartDate,
+        end_date: actualEndDate,
         start_time: startTime,
         end_time: endTime,
         reason,

@@ -23,6 +23,8 @@ interface BlockedSlot {
   id: string
   boat_id: string | null
   blocked_date: string
+  start_date: string // New: multi-day support
+  end_date: string   // New: multi-day support
   start_time: string
   end_time: string
   reason: string
@@ -57,7 +59,8 @@ export default function BlockedSlotsClient({ boats }: BlockedSlotsClientProps) {
 
   // Form state
   const [selectedBoat, setSelectedBoat] = useState<string>('all')
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+  const [startDate, setStartDate] = useState<Date>(new Date())
+  const [endDate, setEndDate] = useState<Date>(new Date())
   const [startTime, setStartTime] = useState('09:00')
   const [endTime, setEndTime] = useState('17:00')
   const [reason, setReason] = useState('')
@@ -110,8 +113,13 @@ export default function BlockedSlotsClient({ boats }: BlockedSlotsClientProps) {
       return
     }
 
-    if (startTime >= endTime) {
-      toast.error('End time must be after start time')
+    if (endDate < startDate) {
+      toast.error('End date must be after or equal to start date')
+      return
+    }
+
+    if (startTime >= endTime && startDate.getTime() === endDate.getTime()) {
+      toast.error('End time must be after start time on the same day')
       return
     }
 
@@ -122,7 +130,8 @@ export default function BlockedSlotsClient({ boats }: BlockedSlotsClientProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           boatId: selectedBoat === 'all' ? null : selectedBoat,
-          blockedDate: format(selectedDate, 'yyyy-MM-dd'),
+          startDate: format(startDate, 'yyyy-MM-dd'),
+          endDate: format(endDate, 'yyyy-MM-dd'),
           startTime,
           endTime,
           reason,
@@ -225,21 +234,42 @@ export default function BlockedSlotsClient({ boats }: BlockedSlotsClientProps) {
                     </Select>
                   </div>
 
-                  {/* Date */}
+                  {/* Start Date */}
                   <div>
-                    <Label>Date</Label>
+                    <Label>Start Date</Label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button variant="outline" className="w-full justify-start gap-2">
                           <CalendarIcon className="w-4 h-4" />
-                          {format(selectedDate, 'PPP')}
+                          {format(startDate, 'PPP')}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
-                          selected={selectedDate}
-                          onSelect={(date) => date && setSelectedDate(date)}
+                          selected={startDate}
+                          onSelect={(date) => date && setStartDate(date)}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  {/* End Date */}
+                  <div>
+                    <Label>End Date</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-full justify-start gap-2">
+                          <CalendarIcon className="w-4 h-4" />
+                          {format(endDate, 'PPP')}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={endDate}
+                          onSelect={(date) => date && setEndDate(date)}
                           initialFocus
                         />
                       </PopoverContent>
@@ -422,7 +452,11 @@ export default function BlockedSlotsClient({ boats }: BlockedSlotsClientProps) {
                           <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-muted-foreground">
                             <span className="inline-flex items-center gap-1">
                               <CalendarIcon className="w-3.5 h-3.5" />
-                              {format(new Date(slot.blocked_date), 'MMM d, yyyy')}
+                              {slot.start_date === slot.end_date ? (
+                                <span>{format(new Date(slot.start_date), 'MMM d, yyyy')}</span>
+                              ) : (
+                                <span>{format(new Date(slot.start_date), 'MMM d')} - {format(new Date(slot.end_date), 'MMM d, yyyy')}</span>
+                              )}
                             </span>
                             <span className="hidden sm:inline">•</span>
                             <span className="inline-flex items-center gap-1">

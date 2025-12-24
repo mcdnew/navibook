@@ -35,25 +35,31 @@ export async function GET(request: Request) {
       )
     }
 
-    // Build query
+    // Build query for multi-day blocking
+    // Find all blocks that overlap with the requested date range
     let query = supabase
       .from('blocked_slots')
       .select('*, boats(id, name), users(first_name, last_name)')
       .eq('company_id', userData.company_id)
 
+    // Date range overlap check:
+    // Block overlaps if: block.start_date <= queryEndDate AND block.end_date >= queryStartDate
     if (startDate) {
-      query = query.gte('blocked_date', startDate)
+      // Block must end on or after the query start date
+      query = query.gte('end_date', startDate)
     }
 
     if (endDate) {
-      query = query.lte('blocked_date', endDate)
+      // Block must start on or before the query end date
+      query = query.lte('start_date', endDate)
     }
 
     if (boatId && boatId !== 'all') {
       query = query.or(`boat_id.eq.${boatId},boat_id.is.null`)
     }
 
-    query = query.order('blocked_date', { ascending: true })
+    // Order by start date, then start time
+    query = query.order('start_date', { ascending: true })
       .order('start_time', { ascending: true })
 
     const { data, error } = await query

@@ -19,6 +19,19 @@ const LocationSettings = dynamic(() => import('@/app/components/company/location
   ),
 })
 
+const CompanyInfoEditor = dynamic(() => import('@/app/components/company/company-info-editor'), {
+  ssr: false,
+  loading: () => (
+    <Card className="maritime-card">
+      <CardContent className="pt-6">
+        <div className="flex items-center justify-center py-8">
+          <p className="text-muted-foreground">Loading company information...</p>
+        </div>
+      </CardContent>
+    </Card>
+  ),
+})
+
 export default async function CompanySettingsPage() {
   const supabase = await createClient()
 
@@ -36,13 +49,6 @@ export default async function CompanySettingsPage() {
   if (!userRecord) redirect('/login')
 
   const isAdmin = userRecord.role === 'admin'
-
-  // Get company info
-  const { data: company } = await supabase
-    .from('companies')
-    .select('id, name, email, phone, address')
-    .eq('id', userRecord.company_id)
-    .single()
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -65,39 +71,8 @@ export default async function CompanySettingsPage() {
           </div>
         </div>
 
-        {/* Company Info Card */}
-        <Card className="maritime-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="w-5 h-5" />
-              Company Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">Company Name</label>
-              <p className="text-lg font-semibold mt-1">{company?.name}</p>
-            </div>
-            {company?.email && (
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Email</label>
-                <p className="text-lg font-semibold mt-1">{company.email}</p>
-              </div>
-            )}
-            {company?.phone && (
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Phone</label>
-                <p className="text-lg font-semibold mt-1">{company.phone}</p>
-              </div>
-            )}
-            {company?.address && (
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Address</label>
-                <p className="text-lg font-semibold mt-1">{company.address}</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Company Info Editor Component */}
+        <CompanyInfoEditor isAdmin={isAdmin} />
 
         {/* Location Settings Component */}
         <LocationSettings isAdmin={isAdmin} />

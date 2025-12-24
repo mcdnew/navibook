@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
+import { kmhToKnots, getWindDirection, getWindDirectionEmoji } from '@/lib/weather/weather-service'
 
 interface DailySummary {
   date: string
@@ -82,12 +83,14 @@ export default function WeatherClient() {
   }
 
   const getSafetyBadge = (waveHeight: number, windSpeed: number) => {
-    if (waveHeight >= 3 || windSpeed >= 40) {
-      return <Badge className="bg-red-100 text-red-700">⚠️ Not Safe</Badge>
-    } else if (waveHeight >= 2 || windSpeed >= 30) {
-      return <Badge className="bg-yellow-100 text-yellow-700">⚡ Caution</Badge>
+    // Updated thresholds to match Marine Weather Guidelines
+    const windKnots = kmhToKnots(windSpeed)
+    if (waveHeight > 2 || windKnots >= 19) { // > 2m waves or > 35 km/h wind
+      return <Badge className="bg-red-100 text-red-700">⚠️ Not Recommended</Badge>
+    } else if (waveHeight >= 2 || windKnots >= 13.5) { // 1-2m waves or 25-35 km/h wind
+      return <Badge className="bg-yellow-100 text-yellow-700">⚡ Caution Advised</Badge>
     } else {
-      return <Badge className="bg-green-100 text-green-700">✓ Good</Badge>
+      return <Badge className="bg-green-100 text-green-700">✓ Good Conditions</Badge>
     }
   }
 
@@ -140,7 +143,7 @@ export default function WeatherClient() {
                   </div>
                   <div className="flex items-center justify-between text-xs">
                     <span>💨 Wind</span>
-                    <span className="font-medium">{Math.round(day.maxWindSpeed)} km/h</span>
+                    <span className="font-medium">{kmhToKnots(day.maxWindSpeed).toFixed(1)} kts</span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
                     <span>💧 Rain</span>
@@ -181,9 +184,14 @@ export default function WeatherClient() {
                 <CardContent className="pt-6">
                   <div className="text-center">
                     <p className="text-3xl mb-2">💨</p>
-                    <p className="text-2xl font-bold">{Math.round(selectedDay.maxWindSpeed)} km/h</p>
+                    <p className="text-2xl font-bold">{kmhToKnots(selectedDay.maxWindSpeed).toFixed(1)} kts</p>
                     <p className="text-sm text-muted-foreground">Max Wind Speed</p>
-                    <p className="text-xs text-muted-foreground mt-1">Avg: {Math.round(selectedDay.avgWindSpeed)} km/h</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {Math.round(selectedDay.maxWindSpeed)} km/h
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Avg: {kmhToKnots(selectedDay.avgWindSpeed).toFixed(1)} kts
+                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -221,7 +229,7 @@ export default function WeatherClient() {
                       <th className="px-4 py-2 text-left text-sm font-medium">Conditions</th>
                       <th className="px-4 py-2 text-right text-sm font-medium">Temp</th>
                       <th className="px-4 py-2 text-right text-sm font-medium">Waves</th>
-                      <th className="px-4 py-2 text-right text-sm font-medium">Wind</th>
+                      <th className="px-4 py-2 text-center text-sm font-medium">Wind</th>
                       <th className="px-4 py-2 text-right text-sm font-medium">Rain</th>
                       <th className="px-4 py-2 text-center text-sm font-medium">Safety</th>
                     </tr>
@@ -245,7 +253,15 @@ export default function WeatherClient() {
                           </td>
                           <td className="px-4 py-2 text-sm text-right">{Math.round(forecast.temperature)}°C</td>
                           <td className="px-4 py-2 text-sm text-right">{forecast.waveHeight.toFixed(1)}m</td>
-                          <td className="px-4 py-2 text-sm text-right">{Math.round(forecast.windSpeed)} km/h</td>
+                          <td className="px-4 py-2 text-sm text-center">
+                            <div className="flex flex-col items-center gap-1">
+                              <span className="text-lg">{getWindDirectionEmoji(forecast.windDirection)}</span>
+                              <div className="text-xs">
+                                <div className="font-medium">{kmhToKnots(forecast.windSpeed).toFixed(1)} kts</div>
+                                <div className="text-muted-foreground">{getWindDirection(forecast.windDirection)}</div>
+                              </div>
+                            </div>
+                          </td>
                           <td className="px-4 py-2 text-sm text-right">{forecast.precipitationProbability}%</td>
                           <td className="px-4 py-2 text-center">
                             {getSafetyBadge(forecast.waveHeight, forecast.windSpeed)}
@@ -271,7 +287,7 @@ export default function WeatherClient() {
               <p className="font-medium text-green-700 dark:text-green-400 mb-2">✓ Good Conditions</p>
               <ul className="space-y-1 text-xs">
                 <li>• Wave height &lt; 1m</li>
-                <li>• Wind speed &lt; 25 km/h</li>
+                <li>• Wind speed &lt; 13.5 kts (&lt; 25 km/h)</li>
                 <li>• Low precipitation probability</li>
                 <li>• Clear or partly cloudy</li>
               </ul>
@@ -280,7 +296,7 @@ export default function WeatherClient() {
               <p className="font-medium text-yellow-700 dark:text-yellow-400 mb-2">⚡ Caution Advised</p>
               <ul className="space-y-1 text-xs">
                 <li>• Wave height 1-2m</li>
-                <li>• Wind speed 25-35 km/h</li>
+                <li>• Wind speed 13.5-19 kts (25-35 km/h)</li>
                 <li>• Moderate rain probability</li>
                 <li>• Monitor conditions closely</li>
               </ul>
@@ -289,7 +305,7 @@ export default function WeatherClient() {
               <p className="font-medium text-red-700 dark:text-red-400 mb-2">⚠️ Not Recommended</p>
               <ul className="space-y-1 text-xs">
                 <li>• Wave height &gt; 2m</li>
-                <li>• Wind speed &gt; 35 km/h</li>
+                <li>• Wind speed &gt; 19 kts (&gt; 35 km/h)</li>
                 <li>• High precipitation/storms</li>
                 <li>• Consider rescheduling</li>
               </ul>

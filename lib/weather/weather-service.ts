@@ -119,31 +119,32 @@ export function assessWeatherSuitability(
   const issues: string[] = []
   let safetyScore = 100
 
-  // Wave height thresholds (meters)
+  // Wave height thresholds (meters) - aligned with Marine Weather Guidelines
   const waveThresholds = {
-    sailboat: { safe: 1.5, caution: 2.5, dangerous: 3.5 },
-    motorboat: { safe: 1.0, caution: 2.0, dangerous: 3.0 },
-    jetski: { safe: 0.5, caution: 1.0, dangerous: 1.5 },
+    sailboat: { good: 1.0, caution: 2.0, dangerous: 2.0 },
+    motorboat: { good: 1.0, caution: 2.0, dangerous: 2.0 },
+    jetski: { good: 0.5, caution: 1.0, dangerous: 1.0 },
   }
 
   const threshold = waveThresholds[boatType as keyof typeof waveThresholds] || waveThresholds.motorboat
 
   // Check wave height
-  if (forecast.waveHeight >= threshold.dangerous) {
+  if (forecast.waveHeight > threshold.dangerous) {
     safetyScore -= 50
-    issues.push(`Dangerous wave height: ${forecast.waveHeight.toFixed(1)}m`)
+    issues.push(`High waves: ${forecast.waveHeight.toFixed(1)}m`)
   } else if (forecast.waveHeight >= threshold.caution) {
     safetyScore -= 25
-    issues.push(`High waves: ${forecast.waveHeight.toFixed(1)}m`)
+    issues.push(`Moderate waves: ${forecast.waveHeight.toFixed(1)}m`)
   }
 
-  // Check wind speed (km/h)
-  if (forecast.windSpeed >= 40) {
+  // Check wind speed - convert km/h to knots for assessment (1 knot = 1.852 km/h)
+  const windKnots = forecast.windSpeed / 1.852
+  if (windKnots >= 19) { // > 35 km/h ≈ 19 knots
     safetyScore -= 40
-    issues.push(`Strong winds: ${forecast.windSpeed.toFixed(0)} km/h`)
-  } else if (forecast.windSpeed >= 30) {
+    issues.push(`Strong winds: ${windKnots.toFixed(1)} knots (${forecast.windSpeed.toFixed(0)} km/h)`)
+  } else if (windKnots >= 13.5) { // 25-35 km/h ≈ 13.5-19 knots
     safetyScore -= 20
-    issues.push(`Moderate winds: ${forecast.windSpeed.toFixed(0)} km/h`)
+    issues.push(`Moderate winds: ${windKnots.toFixed(1)} knots (${forecast.windSpeed.toFixed(0)} km/h)`)
   }
 
   // Check precipitation
@@ -245,6 +246,28 @@ export function getWindDirection(degrees: number): string {
   const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW']
   const index = Math.round(degrees / 22.5) % 16
   return directions[index]
+}
+
+export function getWindDirectionEmoji(degrees: number): string {
+  // Convert wind direction to arrow emoji
+  const normalizedDegrees = ((degrees + 11.25) % 360)
+  if (normalizedDegrees < 22.5) return '⬇️' // N (from north)
+  if (normalizedDegrees < 67.5) return '↙️' // NE
+  if (normalizedDegrees < 112.5) return '⬅️' // E
+  if (normalizedDegrees < 157.5) return '↖️' // SE
+  if (normalizedDegrees < 202.5) return '⬆️' // S
+  if (normalizedDegrees < 247.5) return '↗️' // SW
+  if (normalizedDegrees < 292.5) return '➡️' // W
+  if (normalizedDegrees < 337.5) return '↘️' // NW
+  return '⬇️' // N
+}
+
+export function kmhToKnots(kmh: number): number {
+  return kmh / 1.852
+}
+
+export function knotsToKmh(knots: number): number {
+  return knots * 1.852
 }
 
 // Get daily summary from hourly forecasts

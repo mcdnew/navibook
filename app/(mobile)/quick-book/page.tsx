@@ -20,6 +20,7 @@ import { format } from 'date-fns'
 import { toast } from 'sonner'
 import { CheckCircle2, Clock, AlertCircle } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
+import BookingWeatherCard from '@/app/components/weather/booking-weather-card'
 
 type Boat = {
   boat_id: string
@@ -111,6 +112,10 @@ export default function QuickBookPage() {
     customerName?: string
     customerPhone?: string
   }>({})
+
+  // Weather data
+  const [weatherData, setWeatherData] = useState<any>(null)
+  const [loadingWeather, setLoadingWeather] = useState(false)
 
   // Load user data
   useEffect(() => {
@@ -226,6 +231,56 @@ export default function QuickBookPage() {
 
     checkAvailability()
   }, [date, startTime, duration, user, supabase, refreshTrigger])
+
+  // Fetch weather data when date or start time changes
+  useEffect(() => {
+    async function fetchWeather() {
+      if (!user) return
+
+      setLoadingWeather(true)
+      try {
+        const dateStr = format(date, 'yyyy-MM-dd')
+        const response = await fetch(`/api/weather/forecast?days=7`)
+
+        if (!response.ok) {
+          setWeatherData(null)
+          return
+        }
+
+        const data = await response.json()
+        const forecasts = data.forecasts || []
+
+        // Find forecasts for the selected date
+        const relevantForecasts = forecasts.filter((f: any) => f.date === dateStr)
+
+        if (relevantForecasts.length === 0) {
+          setWeatherData(null)
+          return
+        }
+
+        // Get forecast closest to the selected start time
+        const [startHour] = startTime.split(':').map(Number)
+        const closestForecast = relevantForecasts.reduce((prev: any, curr: any) => {
+          const prevHour = parseInt(curr.time.split(':')[0])
+          const currHour = parseInt(curr.time.split(':')[0])
+
+          const prevDiff = Math.abs(prevHour - startHour)
+          const currDiff = Math.abs(currHour - startHour)
+
+          return currDiff < prevDiff ? curr : prev
+        })
+
+        setWeatherData(closestForecast)
+      } catch (error) {
+        console.error('Error fetching weather:', error)
+        setWeatherData(null)
+      } finally {
+        setLoadingWeather(false)
+      }
+    }
+
+    fetchWeather()
+  }, [date, startTime, user])
 
   // Calculate price and commission when boat or package changes
   useEffect(() => {
@@ -650,6 +705,14 @@ export default function QuickBookPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Weather Recommendation */}
+          <BookingWeatherCard
+            date={format(date, 'yyyy-MM-dd')}
+            startTime={startTime}
+            loading={loadingWeather}
+            weatherData={weatherData}
+          />
 
           {/* Available Boats */}
           <Card id="boat" className={fieldErrors.boat ? 'border-red-500 border-2' : ''}>

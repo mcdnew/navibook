@@ -46,16 +46,25 @@ export async function fetchMarineWeather(
   days: number = 7
 ): Promise<WeatherForecast[]> {
   try {
-    const baseUrl = 'https://marine-api.open-meteo.com/v1/marine'
+    // Fetch wave data from Marine API
+    const marineUrl = 'https://marine-api.open-meteo.com/v1/marine'
+    const marineParams = new URLSearchParams({
+      latitude: latitude.toString(),
+      longitude: longitude.toString(),
+      hourly: 'wave_height',
+      forecast_days: days.toString(),
+      timezone: 'auto',
+    })
 
-    const params = new URLSearchParams({
+    // Fetch weather data from standard API
+    const weatherUrl = 'https://api.open-meteo.com/v1/forecast'
+    const weatherParams = new URLSearchParams({
       latitude: latitude.toString(),
       longitude: longitude.toString(),
       hourly: [
-        'wave_height',
+        'temperature_2m',
         'wind_speed_10m',
         'wind_direction_10m',
-        'temperature_2m',
         'precipitation_probability',
         'weather_code',
       ].join(','),
@@ -63,29 +72,36 @@ export async function fetchMarineWeather(
       timezone: 'auto',
     })
 
-    const response = await fetch(`${baseUrl}?${params}`)
+    const [marineResponse, weatherResponse] = await Promise.all([
+      fetch(`${marineUrl}?${marineParams}`),
+      fetch(`${weatherUrl}?${weatherParams}`),
+    ])
 
-    if (!response.ok) {
-      throw new Error(`Weather API error: ${response.statusText}`)
+    if (!marineResponse.ok) {
+      throw new Error(`Marine API error: ${marineResponse.statusText}`)
+    }
+    if (!weatherResponse.ok) {
+      throw new Error(`Weather API error: ${weatherResponse.statusText}`)
     }
 
-    const data: MarineWeatherData = await response.json()
+    const marineData = await marineResponse.json()
+    const weatherData = await weatherResponse.json()
 
     // Transform data into our format
     const forecasts: WeatherForecast[] = []
 
-    for (let i = 0; i < data.hourly.time.length; i++) {
-      const datetime = new Date(data.hourly.time[i])
+    for (let i = 0; i < weatherData.hourly.time.length; i++) {
+      const datetime = new Date(weatherData.hourly.time[i])
 
       forecasts.push({
         date: datetime.toISOString().split('T')[0],
         time: datetime.toTimeString().split(' ')[0].substring(0, 5),
-        waveHeight: data.hourly.wave_height[i],
-        windSpeed: data.hourly.wind_speed_10m[i],
-        windDirection: data.hourly.wind_direction_10m[i],
-        temperature: data.hourly.temperature_2m[i],
-        precipitationProbability: data.hourly.precipitation_probability[i],
-        weatherCode: data.hourly.weather_code[i],
+        waveHeight: marineData.hourly.wave_height[i] || 0,
+        windSpeed: weatherData.hourly.wind_speed_10m[i] || 0,
+        windDirection: weatherData.hourly.wind_direction_10m[i] || 0,
+        temperature: weatherData.hourly.temperature_2m[i] || 0,
+        precipitationProbability: weatherData.hourly.precipitation_probability[i] || 0,
+        weatherCode: weatherData.hourly.weather_code[i] || 0,
       })
     }
 

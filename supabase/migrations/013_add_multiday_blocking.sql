@@ -2,9 +2,10 @@
 -- Allows blocking slots across multiple days with start and end dates
 
 -- Add new columns for multi-day support
+-- Note: Using temporary defaults to satisfy NOT NULL constraint during migration
 ALTER TABLE blocked_slots
-ADD COLUMN start_date DATE NOT NULL DEFAULT (blocked_date),
-ADD COLUMN end_date DATE NOT NULL DEFAULT (blocked_date);
+ADD COLUMN start_date DATE NOT NULL DEFAULT CURRENT_DATE,
+ADD COLUMN end_date DATE NOT NULL DEFAULT CURRENT_DATE;
 
 -- Update existing records to use the new columns
 UPDATE blocked_slots
@@ -21,6 +22,7 @@ ALTER TABLE blocked_slots
 DROP CONSTRAINT IF EXISTS blocked_slots_company_id_boat_id_blocked_date_start_time_end_time_key;
 
 -- Add new compound index for efficient multi-day range queries
+DROP INDEX IF EXISTS idx_blocked_slots_date_range;
 CREATE INDEX idx_blocked_slots_date_range ON blocked_slots(company_id, boat_id, start_date, end_date);
 
 -- ==========================================================

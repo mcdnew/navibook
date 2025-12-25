@@ -37,16 +37,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
     }
 
-    // Check if the boat is available at the new time
-    const { data: availableBoats, error: availabilityError } = await supabase.rpc(
-      'get_available_boats',
+    // Check if the boat is available at the new time using multi-day aware function
+    const { data: isAvailable, error: availabilityError } = await supabase.rpc(
+      'check_boat_availability',
       {
-        p_boat_type: null, // null means all boat types
-        p_booking_date: newDate,
-        p_company_id: currentBooking.company_id,
-        p_end_time: newEndTime,
-        p_min_capacity: currentBooking.passengers,
+        p_boat_id: currentBooking.boat_id,
+        p_start_date: newDate,
+        p_end_date: newDate, // Single day reschedule, so start and end dates are the same
         p_start_time: newStartTime,
+        p_end_time: newEndTime,
+        p_exclude_booking_id: bookingId, // Exclude current booking from conflict check
       }
     )
 
@@ -58,12 +58,8 @@ export async function POST(request: Request) {
       )
     }
 
-    // Check if the boat is in the available list
-    const isBoatAvailable = availableBoats?.some(
-      (boat: any) => boat.boat_id === currentBooking.boat_id
-    )
-
-    if (!isBoatAvailable) {
+    // Check if the boat is available
+    if (!isAvailable) {
       return NextResponse.json(
         {
           error: `${currentBooking.boats?.name} is not available at the selected time. Please choose a different time or boat.`,

@@ -264,11 +264,16 @@ export default function EditBookingDialog({
     const originalCaptainId = booking.captain_id || 'none'
 
     // Check if sailors changed
-    const sailorsChanged =
-      originalSailors.length !== selectedSailors.length ||
-      !originalSailors.every(os =>
-        selectedSailors.some(s => s.sailorId === os.sailorId)
-      )
+    let sailorsChanged = false
+
+    // Different length = definitely changed
+    if (originalSailors.length !== selectedSailors.length) {
+      sailorsChanged = true
+    } else if (originalSailors.length > 0) {
+      // Same length - check if sailor IDs match
+      const selectedIds = selectedSailors.map(s => s.sailorId)
+      sailorsChanged = !originalSailors.every(os => selectedIds.includes(os.sailorId))
+    }
 
     return (
       customerName !== booking.customer_name ||

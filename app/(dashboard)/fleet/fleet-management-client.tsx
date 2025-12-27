@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Edit, Trash2, Plus } from 'lucide-react'
+import { Edit, Trash2, Plus, User } from 'lucide-react'
 import BoatDialog from './boat-dialog'
 import {
   Dialog,
@@ -162,6 +162,13 @@ export default function FleetManagementClient({ boats }: FleetManagementClientPr
                   <p className="text-muted-foreground">
                     <span className="font-medium">License:</span>{' '}
                     {boat.license_number}
+                  </p>
+                )}
+                {boat.default_captain && (
+                  <p className="text-muted-foreground flex items-center gap-1">
+                    <User className="w-3.5 h-3.5" />
+                    <span className="font-medium">Default Captain:</span>{' '}
+                    {boat.default_captain.first_name} {boat.default_captain.last_name}
                   </p>
                 )}
               </div>

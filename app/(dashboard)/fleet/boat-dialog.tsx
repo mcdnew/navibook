@@ -22,7 +22,15 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
+import { Loader2, User } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+
+interface Captain {
+  id: string
+  first_name: string
+  last_name: string
+  hourly_rate: number
+}
 
 interface BoatDialogProps {
   boat?: any // Existing boat for edit mode
@@ -39,6 +47,8 @@ export default function BoatDialog({
 }: BoatDialogProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [captains, setCaptains] = useState<Captain[]>([])
+  const [loadingCaptains, setLoadingCaptains] = useState(false)
 
   // Form state
   const [name, setName] = useState('')
@@ -47,6 +57,46 @@ export default function BoatDialog({
   const [description, setDescription] = useState('')
   const [licenseNumber, setLicenseNumber] = useState('')
   const [imageUrl, setImageUrl] = useState('')
+  const [defaultCaptainId, setDefaultCaptainId] = useState<string>('none')
+
+  // Load captains when dialog opens
+  useEffect(() => {
+    if (open) {
+      loadCaptains()
+    }
+  }, [open])
+
+  const loadCaptains = async () => {
+    setLoadingCaptains(true)
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: userData } = await supabase
+        .from('users')
+        .select('company_id')
+        .eq('id', user.id)
+        .single()
+
+      if (!userData) return
+
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, first_name, last_name, hourly_rate')
+        .eq('company_id', userData.company_id)
+        .eq('role', 'captain')
+        .order('first_name')
+
+      if (!error && data) {
+        setCaptains(data)
+      }
+    } catch (error) {
+      console.error('Error loading captains:', error)
+    } finally {
+      setLoadingCaptains(false)
+    }
+  }
 
   // Initialize form with boat data in edit mode
   useEffect(() => {
@@ -57,6 +107,7 @@ export default function BoatDialog({
       setDescription(boat.description || '')
       setLicenseNumber(boat.license_number || '')
       setImageUrl(boat.image_url || '')
+      setDefaultCaptainId(boat.default_captain_id || 'none')
     } else if (mode === 'add') {
       // Reset form for add mode
       setName('')
@@ -65,6 +116,7 @@ export default function BoatDialog({
       setDescription('')
       setLicenseNumber('')
       setImageUrl('')
+      setDefaultCaptainId('none')
     }
   }, [mode, boat, open])
 
@@ -98,6 +150,7 @@ export default function BoatDialog({
           description: description.trim() || null,
           licenseNumber: licenseNumber.trim() || null,
           imageUrl: imageUrl.trim() || null,
+          defaultCaptainId: defaultCaptainId === 'none' ? null : defaultCaptainId,
         }),
       })
 
@@ -193,6 +246,35 @@ export default function BoatDialog({
                 disabled={loading}
               />
             </div>
+          </div>
+
+          {/* Default Captain */}
+          <div>
+            <Label htmlFor="defaultCaptain" className="flex items-center gap-2">
+              <User className="w-4 h-4" />
+              Default Captain
+            </Label>
+            <Select
+              value={defaultCaptainId}
+              onValueChange={setDefaultCaptainId}
+              disabled={loading || loadingCaptains}
+            >
+              <SelectTrigger id="defaultCaptain">
+                <SelectValue placeholder={loadingCaptains ? 'Loading captains...' : 'Select default captain'} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No default captain</SelectItem>
+                {captains.map((captain) => (
+                  <SelectItem key={captain.id} value={captain.id}>
+                    {captain.first_name} {captain.last_name}
+                    {captain.hourly_rate > 0 && ` - €${captain.hourly_rate}/h`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1">
+              Optional: This captain will be auto-selected when booking this boat
+            </p>
           </div>
 
           {/* Image URL */}

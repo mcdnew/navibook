@@ -13,7 +13,14 @@ export default async function FleetPage() {
 
   const { data: boats } = await supabase
     .from('boats')
-    .select('*')
+    .select(`
+      *,
+      default_captain:users!boats_default_captain_id_fkey(
+        id,
+        first_name,
+        last_name
+      )
+    `)
     .order('name')
 
   return (

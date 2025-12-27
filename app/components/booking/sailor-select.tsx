@@ -101,21 +101,33 @@ export default function SailorSelect({
 
     const fee = (sailor.hourly_rate || 0) * durationHours
 
-    onSailorsChange([
+    const newSailors = [
       ...selectedSailors,
       {
         sailorId: sailor.id,
         hourlyRate: sailor.hourly_rate || 0,
         fee,
       },
-    ])
+    ]
 
+    console.log('🤖 DEBUG: Adding sailor to SailorSelect', {
+      sailor: sailor.first_name,
+      newLength: newSailors.length,
+      newSailors,
+    })
+
+    onSailorsChange(newSailors)
     setAddingSailor('')
   }
 
   // Remove a sailor
   const handleRemoveSailor = (sailorId: string) => {
-    onSailorsChange(selectedSailors.filter(s => s.sailorId !== sailorId))
+    const filtered = selectedSailors.filter(s => s.sailorId !== sailorId)
+    console.log('🤖 DEBUG: Removing sailor from SailorSelect', {
+      sailorId,
+      newLength: filtered.length,
+    })
+    onSailorsChange(filtered)
   }
 
   // Get sailor display info

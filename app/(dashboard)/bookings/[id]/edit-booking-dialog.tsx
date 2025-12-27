@@ -467,7 +467,7 @@ export default function EditBookingDialog({
             </div>
           )}
 
-          {/* Sailor Selection */}
+          {/* Sailor Selection - SIMPLIFIED like Captain */}
           {['admin', 'manager', 'office_staff'].includes(userRole) && (
             <div className="space-y-4">
               <h3 className="font-medium text-sm">Sailor Assignment</h3>
@@ -477,6 +477,13 @@ export default function EditBookingDialog({
                 onSailorsChange={setSelectedSailors}
                 disabled={loading}
               />
+              {/* DEBUG: Show current state */}
+              <div className="text-xs text-muted-foreground bg-blue-50 p-2 rounded">
+                Selected Sailors: {selectedSailors.length}
+                {selectedSailors.map((s, i) => (
+                  <div key={i}>{s.sailorId} - €{s.fee}</div>
+                ))}
+              </div>
             </div>
           )}
 

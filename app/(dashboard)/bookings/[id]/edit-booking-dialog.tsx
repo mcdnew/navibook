@@ -24,6 +24,13 @@ import {
 import { toast } from 'sonner'
 import { Loader2, AlertTriangle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import SailorSelect from '@/app/components/booking/sailor-select'
+
+interface SelectedSailor {
+  sailorId: string
+  hourlyRate: number
+  fee: number
+}
 
 interface EditBookingDialogProps {
   booking: any
@@ -40,6 +47,8 @@ export default function EditBookingDialog({
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
   const [captains, setCaptains] = useState<any[]>([])
+  const [userRole, setUserRole] = useState<string>('')
+  const [selectedSailors, setSelectedSailors] = useState<SelectedSailor[]>([])
 
   // Form state
   const [customerName, setCustomerName] = useState(booking.customer_name)
@@ -53,20 +62,24 @@ export default function EditBookingDialog({
   const [totalPrice, setTotalPrice] = useState(booking.total_price)
   const [loadingPrice, setLoadingPrice] = useState(false)
 
-  // Load captains on mount
+  // Load captains, user role, and existing sailors on mount
   useEffect(() => {
-    async function loadCaptains() {
+    async function loadData() {
       const { data: userData } = await supabase.auth.getUser()
       if (!userData.user) return
 
       const { data: userRecord } = await supabase
         .from('users')
-        .select('company_id')
+        .select('company_id, role')
         .eq('id', userData.user.id)
         .single()
 
       if (!userRecord) return
 
+      // Set user role for permission checks
+      setUserRole(userRecord.role)
+
+      // Load captains
       const { data: captainsData } = await supabase
         .from('users')
         .select('id, first_name, last_name, hourly_rate')
@@ -77,12 +90,28 @@ export default function EditBookingDialog({
       if (captainsData) {
         setCaptains(captainsData)
       }
+
+      // Load existing sailors for this booking
+      const { data: bookingSailors } = await supabase
+        .from('booking_sailors')
+        .select('sailor_id, hourly_rate, fee')
+        .eq('booking_id', booking.id)
+
+      if (bookingSailors) {
+        setSelectedSailors(
+          bookingSailors.map((bs) => ({
+            sailorId: bs.sailor_id,
+            hourlyRate: bs.hourly_rate,
+            fee: bs.fee,
+          }))
+        )
+      }
     }
 
     if (open) {
-      loadCaptains()
+      loadData()
     }
-  }, [open, supabase])
+  }, [open, supabase, booking.id])
 
   // Fetch pricing when package type changes
   useEffect(() => {
@@ -168,6 +197,28 @@ export default function EditBookingDialog({
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to update booking')
+      }
+
+      // Update sailors if user has permission
+      const canAssignCrew = ['admin', 'manager', 'office_staff'].includes(userRole)
+      if (canAssignCrew) {
+        // Delete existing sailor assignments
+        await supabase
+          .from('booking_sailors')
+          .delete()
+          .eq('booking_id', booking.id)
+
+        // Insert new sailor assignments
+        if (selectedSailors.length > 0) {
+          const sailorAssignments = selectedSailors.map((s) => ({
+            booking_id: booking.id,
+            sailor_id: s.sailorId,
+            hourly_rate: s.hourlyRate,
+            fee: s.fee,
+          }))
+
+          await supabase.from('booking_sailors').insert(sailorAssignments)
+        }
       }
 
       toast.success('Booking Updated!', {
@@ -325,6 +376,19 @@ export default function EditBookingDialog({
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+          )}
+
+          {/* Sailor Selection */}
+          {['admin', 'manager', 'office_staff'].includes(userRole) && (
+            <div className="space-y-4">
+              <h3 className="font-medium text-sm">Sailor Assignment</h3>
+              <SailorSelect
+                durationHours={booking.duration_hours}
+                selectedSailors={selectedSailors}
+                onSailorsChange={setSelectedSailors}
+                disabled={loading}
+              />
             </div>
           )}
 

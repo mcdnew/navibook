@@ -49,6 +49,7 @@ export default function EditBookingDialog({
   const [captains, setCaptains] = useState<any[]>([])
   const [userRole, setUserRole] = useState<string>('')
   const [selectedSailors, setSelectedSailors] = useState<SelectedSailor[]>([])
+  const [originalSailors, setOriginalSailors] = useState<SelectedSailor[]>([])
 
   // Form state
   const [customerName, setCustomerName] = useState(booking.customer_name)
@@ -98,13 +99,13 @@ export default function EditBookingDialog({
         .eq('booking_id', booking.id)
 
       if (bookingSailors) {
-        setSelectedSailors(
-          bookingSailors.map((bs) => ({
-            sailorId: bs.sailor_id,
-            hourlyRate: bs.hourly_rate,
-            fee: bs.fee,
-          }))
-        )
+        const sailorsList = bookingSailors.map((bs) => ({
+          sailorId: bs.sailor_id,
+          hourlyRate: bs.hourly_rate,
+          fee: bs.fee,
+        }))
+        setSelectedSailors(sailorsList)
+        setOriginalSailors(sailorsList) // Track original for history logging
       }
     }
 
@@ -202,6 +203,13 @@ export default function EditBookingDialog({
       // Update sailors if user has permission
       const canAssignCrew = ['admin', 'manager', 'office_staff'].includes(userRole)
       if (canAssignCrew) {
+        // Check if sailors changed
+        const sailorsChanged =
+          originalSailors.length !== selectedSailors.length ||
+          !originalSailors.every(os =>
+            selectedSailors.some(s => s.sailorId === os.sailorId)
+          )
+
         // Delete existing sailor assignments
         await supabase
           .from('booking_sailors')
@@ -218,6 +226,27 @@ export default function EditBookingDialog({
           }))
 
           await supabase.from('booking_sailors').insert(sailorAssignments)
+        }
+
+        // Log sailor changes in booking history
+        if (sailorsChanged) {
+          const { data: { user } } = await supabase.auth.getUser()
+          if (user) {
+            await supabase.from('booking_history').insert({
+              booking_id: booking.id,
+              user_id: user.id,
+              action: 'updated',
+              old_data: {
+                sailors: originalSailors.map(s => s.sailorId),
+                sailor_count: originalSailors.length,
+              },
+              new_data: {
+                sailors: selectedSailors.map(s => s.sailorId),
+                sailor_count: selectedSailors.length,
+              },
+              notes: `Changed Sailors (${originalSailors.length} → ${selectedSailors.length})`,
+            })
+          }
         }
       }
 

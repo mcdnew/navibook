@@ -104,6 +104,23 @@ export default async function BookingDetailPage({
     notFound()
   }
 
+  // Fetch sailors assigned to this booking
+  const { data: bookingSailors } = await supabase
+    .from('booking_sailors')
+    .select(`
+      id,
+      hourly_rate,
+      fee,
+      sailor:users!booking_sailors_sailor_id_fkey (
+        id,
+        first_name,
+        last_name,
+        email
+      )
+    `)
+    .eq('booking_id', params.id)
+    .order('created_at')
+
   // Check if user has permission to view this booking
   const isAgent = userRecord.role === 'regular_agent' || userRecord.role === 'power_agent'
   if (isAgent && booking.agent_id !== user.id) {
@@ -340,6 +357,14 @@ export default async function BookingDetailPage({
                       </span>
                     </div>
                   )}
+                  {booking.sailor_fee > 0 && (
+                    <div className="flex justify-between items-center pt-2 border-t">
+                      <span className="text-sm text-muted-foreground">Sailor Fee</span>
+                      <span className="font-semibold text-purple-600">
+                        {formatCurrency(booking.sailor_fee)}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -380,6 +405,47 @@ export default async function BookingDetailPage({
                     <p className="font-semibold">
                       {booking.captain.first_name} {booking.captain.last_name}
                     </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Sailors Information */}
+            {bookingSailors && bookingSailors.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="w-5 h-5" />
+                    Sailors ({bookingSailors.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {bookingSailors.map((bs: any) => (
+                      <div key={bs.id} className="flex justify-between items-start pb-3 border-b last:border-b-0 last:pb-0">
+                        <div className="space-y-1">
+                          <p className="font-semibold">
+                            {bs.sailor?.first_name} {bs.sailor?.last_name}
+                          </p>
+                          {bs.sailor?.email && (
+                            <p className="text-sm text-muted-foreground">{bs.sailor.email}</p>
+                          )}
+                          {bs.hourly_rate > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                              €{bs.hourly_rate.toFixed(2)}/hour
+                            </p>
+                          )}
+                        </div>
+                        {bs.fee > 0 && (
+                          <div className="text-right">
+                            <p className="font-semibold text-purple-600">
+                              {formatCurrency(bs.fee)}
+                            </p>
+                            <p className="text-xs text-muted-foreground">Fee</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>

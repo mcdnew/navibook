@@ -36,7 +36,7 @@ export async function login(formData: FormData) {
         redirect('/dashboard')
       } else if (userRecord.role === 'regular_agent' || userRecord.role === 'power_agent') {
         redirect('/quick-book')
-      } else if (userRecord.role === 'captain') {
+      } else if (userRecord.role === 'captain' || userRecord.role === 'sailor') {
         redirect('/my-bookings')
       }
     }

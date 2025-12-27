@@ -408,7 +408,7 @@ export default function EditBookingDialog({
             <div className="space-y-4">
               <h3 className="font-medium text-sm">Sailor Assignment</h3>
               <SailorSelect
-                durationHours={booking.duration_hours}
+                durationHours={parseInt(booking.duration.replace('h', ''))}
                 selectedSailors={selectedSailors}
                 onSailorsChange={setSelectedSailors}
                 disabled={loading}

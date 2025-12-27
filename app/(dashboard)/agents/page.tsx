@@ -30,7 +30,7 @@ export default async function AgentsPage() {
     .from('users')
     .select('*')
     .eq('company_id', currentUser.company_id)
-    .in('role', ['regular_agent', 'power_agent', 'admin', 'office_staff', 'manager', 'captain'])
+    .in('role', ['regular_agent', 'power_agent', 'admin', 'office_staff', 'manager', 'captain', 'sailor'])
     .order('created_at', { ascending: false })
 
   // Get performance metrics for each agent

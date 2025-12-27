@@ -42,6 +42,7 @@ type Agent = {
   phone: string | null
   role: string
   commission_percentage: number
+  hourly_rate: number | null
   is_active: boolean
   created_at: string
   // Performance metrics
@@ -61,7 +62,8 @@ const ROLES = [
   { value: 'power_agent', label: 'Power Agent', description: 'Create and manage all bookings' },
   { value: 'regular_agent', label: 'Regular Agent', description: 'Create bookings with holds' },
   { value: 'office_staff', label: 'Office Staff', description: 'View-only access' },
-  { value: 'captain', label: 'Captain', description: 'View assigned bookings' },
+  { value: 'captain', label: 'Captain', description: 'Boat captain with hourly rate' },
+  { value: 'sailor', label: 'Sailor', description: 'Crew member with hourly rate' },
 ]
 
 export default function AgentsClient({ agents: initialAgents, currentUserRole }: AgentsClientProps) {
@@ -85,6 +87,7 @@ export default function AgentsClient({ agents: initialAgents, currentUserRole }:
   const [formPhone, setFormPhone] = useState('')
   const [formRole, setFormRole] = useState('regular_agent')
   const [formCommission, setFormCommission] = useState('10')
+  const [formHourlyRate, setFormHourlyRate] = useState('0')
   const [formPassword, setFormPassword] = useState('')
   const [formIsActive, setFormIsActive] = useState(true)
 
@@ -125,6 +128,7 @@ export default function AgentsClient({ agents: initialAgents, currentUserRole }:
     setFormPhone('')
     setFormRole('regular_agent')
     setFormCommission('10')
+    setFormHourlyRate('0')
     setFormPassword('')
     setFormIsActive(true)
   }
@@ -147,6 +151,7 @@ export default function AgentsClient({ agents: initialAgents, currentUserRole }:
           phone: formPhone || null,
           role: formRole,
           commissionPercentage: parseFloat(formCommission),
+          hourlyRate: parseFloat(formHourlyRate),
           password: formPassword,
           isActive: formIsActive,
         }),
@@ -192,6 +197,7 @@ export default function AgentsClient({ agents: initialAgents, currentUserRole }:
           phone: formPhone || null,
           role: formRole,
           commissionPercentage: parseFloat(formCommission),
+          hourlyRate: parseFloat(formHourlyRate),
           isActive: formIsActive,
         }),
       })
@@ -256,6 +262,7 @@ export default function AgentsClient({ agents: initialAgents, currentUserRole }:
     setFormPhone(agent.phone || '')
     setFormRole(agent.role)
     setFormCommission(agent.commission_percentage.toString())
+    setFormHourlyRate((agent.hourly_rate || 0).toString())
     setFormIsActive(agent.is_active)
     setShowEditDialog(true)
   }
@@ -550,18 +557,33 @@ export default function AgentsClient({ agents: initialAgents, currentUserRole }:
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="commission">Commission %</Label>
-                <Input
-                  id="commission"
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.5"
-                  value={formCommission}
-                  onChange={(e) => setFormCommission(e.target.value)}
-                />
-              </div>
+              {formRole === 'captain' || formRole === 'sailor' ? (
+                <div className="space-y-2">
+                  <Label htmlFor="hourlyRate">Hourly Rate (€)</Label>
+                  <Input
+                    id="hourlyRate"
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    value={formHourlyRate}
+                    onChange={(e) => setFormHourlyRate(e.target.value)}
+                    placeholder="0.00"
+                  />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="commission">Commission %</Label>
+                  <Input
+                    id="commission"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.5"
+                    value={formCommission}
+                    onChange={(e) => setFormCommission(e.target.value)}
+                  />
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-2">
@@ -666,18 +688,33 @@ export default function AgentsClient({ agents: initialAgents, currentUserRole }:
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="editCommission">Commission %</Label>
-                <Input
-                  id="editCommission"
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.5"
-                  value={formCommission}
-                  onChange={(e) => setFormCommission(e.target.value)}
-                />
-              </div>
+              {formRole === 'captain' || formRole === 'sailor' ? (
+                <div className="space-y-2">
+                  <Label htmlFor="editHourlyRate">Hourly Rate (€)</Label>
+                  <Input
+                    id="editHourlyRate"
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    value={formHourlyRate}
+                    onChange={(e) => setFormHourlyRate(e.target.value)}
+                    placeholder="0.00"
+                  />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="editCommission">Commission %</Label>
+                  <Input
+                    id="editCommission"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.5"
+                    value={formCommission}
+                    onChange={(e) => setFormCommission(e.target.value)}
+                  />
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-2">

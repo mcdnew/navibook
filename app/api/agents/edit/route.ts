@@ -14,6 +14,7 @@ export async function POST(request: Request) {
       phone,
       role,
       commissionPercentage,
+      hourlyRate,
       isActive,
     } = await request.json()
 
@@ -118,6 +119,7 @@ export async function POST(request: Request) {
         phone: phone || null,
         role,
         commission_percentage: commissionPercentage || 0,
+        hourly_rate: hourlyRate !== undefined ? hourlyRate : null,
         is_active: isActive,
       })
       .eq('id', agentId)

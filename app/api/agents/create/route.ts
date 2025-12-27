@@ -13,6 +13,7 @@ export async function POST(request: Request) {
       phone,
       role,
       commissionPercentage,
+      hourlyRate,
       password,
       isActive,
     } = await request.json()
@@ -107,6 +108,7 @@ export async function POST(request: Request) {
         phone: phone || null,
         role,
         commission_percentage: commissionPercentage || 0,
+        hourly_rate: hourlyRate || null,
         is_active: isActive !== undefined ? isActive : true,
       })
       .select()

@@ -88,6 +88,9 @@ CREATE POLICY "Admin/manager/office can delete booking sailors"
 -- UPDATE STATISTICS FUNCTION FOR SAILOR FEES
 -- ==========================================================
 
+-- Drop existing function first (return type changed)
+DROP FUNCTION IF EXISTS get_booking_stats(UUID, DATE, DATE);
+
 -- Update get_booking_stats to include sailor fees
 CREATE OR REPLACE FUNCTION get_booking_stats(
   p_company_id UUID,

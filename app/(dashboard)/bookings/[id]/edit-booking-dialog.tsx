@@ -269,13 +269,18 @@ export default function EditBookingDialog({
     // Different length = definitely changed
     if (originalSailors.length !== selectedSailors.length) {
       sailorsChanged = true
+      console.log('🤖 DEBUG: Sailor count changed', {
+        original: originalSailors.length,
+        selected: selectedSailors.length,
+        sailorsChanged,
+      })
     } else if (originalSailors.length > 0) {
       // Same length - check if sailor IDs match
       const selectedIds = selectedSailors.map(s => s.sailorId)
       sailorsChanged = !originalSailors.every(os => selectedIds.includes(os.sailorId))
     }
 
-    return (
+    const otherChanges =
       customerName !== booking.customer_name ||
       customerPhone !== booking.customer_phone ||
       customerEmail !== (booking.customer_email || '') ||
@@ -284,9 +289,19 @@ export default function EditBookingDialog({
       captainId !== originalCaptainId ||
       totalPrice !== booking.total_price ||
       depositAmount !== booking.deposit_amount.toString() ||
-      notes !== (booking.notes || '') ||
-      sailorsChanged
-    )
+      notes !== (booking.notes || '')
+
+    const result = otherChanges || sailorsChanged
+
+    console.log('🤖 DEBUG: hasChanges()', {
+      sailorsChanged,
+      otherChanges,
+      result,
+      selectedSailors: selectedSailors.length,
+      originalSailors: originalSailors.length,
+    })
+
+    return result
   }
 
   // Determine if booking can be edited

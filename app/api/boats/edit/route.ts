@@ -6,7 +6,7 @@ export const revalidate = 0
 
 export async function POST(request: Request) {
   try {
-    const { boatId, name, boatType, capacity, description, licenseNumber, imageUrl } =
+    const { boatId, name, boatType, capacity, description, licenseNumber, imageUrl, defaultCaptainId } =
       await request.json()
 
     // Validation
@@ -38,19 +38,34 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Prepare update data
+    const updateData: any = {
+      name: name.trim(),
+      boat_type: boatType,
+      capacity: capacity,
+      description: description || null,
+      license_number: licenseNumber || null,
+      image_url: imageUrl || null,
+    }
+
+    // Handle default captain (can be null to clear, undefined to skip)
+    if (defaultCaptainId !== undefined) {
+      updateData.default_captain_id = defaultCaptainId || null
+    }
+
     // Update boat
     const { data, error } = await supabase
       .from('boats')
-      .update({
-        name: name.trim(),
-        boat_type: boatType,
-        capacity: capacity,
-        description: description || null,
-        license_number: licenseNumber || null,
-        image_url: imageUrl || null,
-      })
+      .update(updateData)
       .eq('id', boatId)
-      .select()
+      .select(`
+        *,
+        default_captain:users!boats_default_captain_id_fkey(
+          id,
+          first_name,
+          last_name
+        )
+      `)
       .single()
 
     if (error) {

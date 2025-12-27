@@ -14,6 +14,7 @@ export async function POST(request: Request) {
       passengers,
       packageType,
       captainId,
+      captainFee,
       totalPrice,
       depositAmount,
       notes,
@@ -59,6 +60,23 @@ export async function POST(request: Request) {
       )
     }
 
+    // Get user's role for permission checks
+    const { data: userRecord, error: userError } = await supabase
+      .from('users')
+      .select('role, company_id')
+      .eq('id', user.id)
+      .single()
+
+    if (userError || !userRecord) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      )
+    }
+
+    // Check if user can modify captain/sailor assignments
+    const canModifyCrew = ['admin', 'manager', 'office_staff'].includes(userRecord.role)
+
     // Get current booking to check capacity
     const { data: currentBooking, error: fetchError } = await supabase
       .from('bookings')
@@ -96,9 +114,18 @@ export async function POST(request: Request) {
       customer_email: customerEmail,
       passengers: passengers,
       package_type: packageType,
-      captain_id: captainId,
       deposit_amount: depositAmount,
       notes: notes,
+    }
+
+    // Only update captain if user has permission
+    if (canModifyCrew && captainId !== undefined) {
+      updateData.captain_id = captainId || null
+    }
+
+    // Only update captain_fee if user has permission and value provided
+    if (canModifyCrew && captainFee !== undefined) {
+      updateData.captain_fee = captainFee || 0
     }
 
     // Only update total_price if provided

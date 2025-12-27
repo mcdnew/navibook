@@ -21,6 +21,7 @@ import { toast } from 'sonner'
 import { CheckCircle2, Clock, AlertCircle } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 import BookingWeatherCard from '@/app/components/weather/booking-weather-card'
+import SailorSelect from '@/app/components/booking/sailor-select'
 
 type Boat = {
   boat_id: string
@@ -44,6 +45,13 @@ type User = {
   last_name: string
   commission_percentage: number
   company_id: string
+  role: string
+}
+
+type SelectedSailor = {
+  sailorId: string
+  hourlyRate: number
+  fee: number
 }
 
 const DURATIONS = ['2h', '3h', '4h', '8h'] as const
@@ -88,6 +96,12 @@ export default function QuickBookPage() {
   const [selectedCaptain, setSelectedCaptain] = useState<string>('none')
   const [captainFee, setCaptainFee] = useState<number>(0)
 
+  // Sailors
+  const [selectedSailors, setSelectedSailors] = useState<SelectedSailor[]>([])
+
+  // Check if user can assign crew (admin/manager/office_staff only)
+  const canAssignCrew = user?.role && ['admin', 'manager', 'office_staff'].includes(user.role)
+
   // Calculated values
   const [totalPrice, setTotalPrice] = useState<number>(0)
   const [commission, setCommission] = useState<number>(0)
@@ -129,7 +143,7 @@ export default function QuickBookPage() {
 
       const { data: userData } = await supabase
         .from('users')
-        .select('id, first_name, last_name, commission_percentage, company_id')
+        .select('id, first_name, last_name, commission_percentage, company_id, role')
         .eq('id', authUser.id)
         .single()
 
@@ -555,6 +569,26 @@ export default function QuickBookPage() {
       setBookingId(bookingIdResult)
       setShowConfirmation(true)
 
+      // Assign sailors if any selected
+      if (selectedSailors.length > 0 && bookingIdResult) {
+        try {
+          const response = await fetch('/api/bookings/sailors', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              bookingId: bookingIdResult,
+              sailors: selectedSailors,
+            }),
+          })
+
+          if (!response.ok) {
+            console.error('Failed to assign sailors')
+          }
+        } catch (sailorError) {
+          console.error('Error assigning sailors:', sailorError)
+        }
+      }
+
     } catch (err: any) {
       console.error('Booking error:', err)
 
@@ -852,8 +886,8 @@ export default function QuickBookPage() {
             </CardContent>
           </Card>
 
-          {/* Captain Selection */}
-          {selectedBoat && captains.length > 0 && (
+          {/* Captain Selection - Only for admin/manager/office_staff */}
+          {selectedBoat && captains.length > 0 && canAssignCrew && (
             <Card>
               <CardHeader>
                 <CardTitle>Captain</CardTitle>
@@ -881,6 +915,23 @@ export default function QuickBookPage() {
                     {captains.find(c => c.id === selectedCaptain)?.hourly_rate}/h)
                   </p>
                 )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Sailor Selection - Only for admin/manager/office_staff */}
+          {selectedBoat && canAssignCrew && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Sailors</CardTitle>
+                <CardDescription>Assign sailors to this booking (optional)</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <SailorSelect
+                  durationHours={parseInt(duration.replace('h', ''))}
+                  selectedSailors={selectedSailors}
+                  onSailorsChange={setSelectedSailors}
+                />
               </CardContent>
             </Card>
           )}

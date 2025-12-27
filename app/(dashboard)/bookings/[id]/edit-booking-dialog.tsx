@@ -210,42 +210,37 @@ export default function EditBookingDialog({
             selectedSailors.some(s => s.sailorId === os.sailorId)
           )
 
-        // Delete existing sailor assignments
-        await supabase
-          .from('booking_sailors')
-          .delete()
-          .eq('booking_id', booking.id)
-
-        // Insert new sailor assignments
-        if (selectedSailors.length > 0) {
-          const sailorAssignments = selectedSailors.map((s) => ({
-            booking_id: booking.id,
-            sailor_id: s.sailorId,
-            hourly_rate: s.hourlyRate,
-            fee: s.fee,
-          }))
-
-          await supabase.from('booking_sailors').insert(sailorAssignments)
-        }
-
-        // Log sailor changes in booking history
         if (sailorsChanged) {
-          const { data: { user } } = await supabase.auth.getUser()
-          if (user) {
-            await supabase.from('booking_history').insert({
-              booking_id: booking.id,
-              user_id: user.id,
-              action: 'updated',
-              old_data: {
-                sailors: originalSailors.map(s => s.sailorId),
-                sailor_count: originalSailors.length,
-              },
-              new_data: {
-                sailors: selectedSailors.map(s => s.sailorId),
-                sailor_count: selectedSailors.length,
-              },
-              notes: `Changed Sailors (${originalSailors.length} → ${selectedSailors.length})`,
-            })
+          // Update sailor assignments via API
+          // Note: POST endpoint deletes existing sailors and inserts new ones
+          const sailorResponse = await fetch('/api/bookings/sailors', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              bookingId: booking.id,
+              sailors: selectedSailors, // Can be empty array to remove all sailors
+            }),
+          })
+
+          if (!sailorResponse.ok) {
+            const errorData = await sailorResponse.json()
+            throw new Error(errorData.error || 'Failed to update sailors')
+          }
+
+          // Log sailor changes in booking history
+          const historyResponse = await fetch('/api/bookings/sailors/history', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              bookingId: booking.id,
+              oldSailors: originalSailors,
+              newSailors: selectedSailors,
+            }),
+          })
+
+          // Don't fail the whole update if history logging fails
+          if (!historyResponse.ok) {
+            console.error('Failed to log sailor history')
           }
         }
       }

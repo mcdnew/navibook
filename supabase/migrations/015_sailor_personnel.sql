@@ -47,6 +47,13 @@ ADD COLUMN IF NOT EXISTS sailor_fee DECIMAL(10,2) DEFAULT 0.00;
 -- Enable RLS on booking_sailors
 ALTER TABLE booking_sailors ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist (for re-running migration)
+DROP POLICY IF EXISTS "View booking sailors based on booking access" ON booking_sailors;
+DROP POLICY IF EXISTS "Sailors can view their own assignments" ON booking_sailors;
+DROP POLICY IF EXISTS "Admin/manager/office can insert booking sailors" ON booking_sailors;
+DROP POLICY IF EXISTS "Admin/manager/office can update booking sailors" ON booking_sailors;
+DROP POLICY IF EXISTS "Admin/manager/office can delete booking sailors" ON booking_sailors;
+
 -- Policy: View booking sailors - users can see sailors for bookings they can access
 CREATE POLICY "View booking sailors based on booking access"
   ON booking_sailors FOR SELECT

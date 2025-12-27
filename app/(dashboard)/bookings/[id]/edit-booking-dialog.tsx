@@ -262,6 +262,14 @@ export default function EditBookingDialog({
 
   const hasChanges = () => {
     const originalCaptainId = booking.captain_id || 'none'
+
+    // Check if sailors changed
+    const sailorsChanged =
+      originalSailors.length !== selectedSailors.length ||
+      !originalSailors.every(os =>
+        selectedSailors.some(s => s.sailorId === os.sailorId)
+      )
+
     return (
       customerName !== booking.customer_name ||
       customerPhone !== booking.customer_phone ||
@@ -271,7 +279,8 @@ export default function EditBookingDialog({
       captainId !== originalCaptainId ||
       totalPrice !== booking.total_price ||
       depositAmount !== booking.deposit_amount.toString() ||
-      notes !== (booking.notes || '')
+      notes !== (booking.notes || '') ||
+      sailorsChanged
     )
   }
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import {
@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { X, Plus, Users, Euro } from 'lucide-react'
+import { X, Users, Euro } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 interface Sailor {
@@ -42,62 +42,55 @@ export default function SailorSelect({
 }: SailorSelectProps) {
   const [sailors, setSailors] = useState<Sailor[]>([])
   const [loading, setLoading] = useState(false)
-  const [addingSailor, setAddingSailor] = useState<string>('')
 
   // Load sailors on mount
   useEffect(() => {
+    const loadSailors = async () => {
+      setLoading(true)
+      try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        const { data: userData } = await supabase
+          .from('users')
+          .select('company_id')
+          .eq('id', user.id)
+          .single()
+
+        if (!userData) return
+
+        const { data, error } = await supabase
+          .from('users')
+          .select('id, first_name, last_name, hourly_rate')
+          .eq('company_id', userData.company_id)
+          .eq('role', 'sailor')
+          .order('first_name')
+
+        if (!error && data) {
+          setSailors(data)
+        }
+      } catch (error) {
+        console.error('Error loading sailors:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
     loadSailors()
   }, [])
 
-  const loadSailors = async () => {
-    setLoading(true)
-    try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+  // Add a sailor by ID
+  const handleAddSailor = (sailorId: string) => {
+    if (!sailorId || sailorId === '') return
 
-      const { data: userData } = await supabase
-        .from('users')
-        .select('company_id')
-        .eq('id', user.id)
-        .single()
-
-      if (!userData) return
-
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, first_name, last_name, hourly_rate')
-        .eq('company_id', userData.company_id)
-        .eq('role', 'sailor')
-        .order('first_name')
-
-      if (!error && data) {
-        setSailors(data)
-      }
-    } catch (error) {
-      console.error('Error loading sailors:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Calculate available sailors (not yet selected)
-  const availableSailors = useMemo(() => {
-    const selectedIds = new Set(selectedSailors.map(s => s.sailorId))
-    return sailors.filter(s => !selectedIds.has(s.id))
-  }, [sailors, selectedSailors])
-
-  // Calculate total sailor fee
-  const totalSailorFee = useMemo(() => {
-    return selectedSailors.reduce((sum, s) => sum + s.fee, 0)
-  }, [selectedSailors])
-
-  // Add a sailor
-  const handleAddSailor = () => {
-    if (!addingSailor) return
-
-    const sailor = sailors.find(s => s.id === addingSailor)
+    const sailor = sailors.find(s => s.id === sailorId)
     if (!sailor) return
+
+    // Check if already selected
+    if (selectedSailors.some(s => s.sailorId === sailorId)) {
+      return
+    }
 
     const fee = (sailor.hourly_rate || 0) * durationHours
 
@@ -117,7 +110,6 @@ export default function SailorSelect({
     })
 
     onSailorsChange(newSailors)
-    setAddingSailor('')
   }
 
   // Remove a sailor
@@ -130,31 +122,20 @@ export default function SailorSelect({
     onSailorsChange(filtered)
   }
 
-  // Get sailor display info
+  // Get sailor info by ID
   const getSailorInfo = (sailorId: string) => {
     return sailors.find(s => s.id === sailorId)
   }
 
-  // Recalculate fees when duration changes
-  useEffect(() => {
-    if (selectedSailors.length > 0 && durationHours > 0) {
-      const updatedSailors = selectedSailors.map(s => {
-        const sailor = sailors.find(sa => sa.id === s.sailorId)
-        return {
-          ...s,
-          fee: (sailor?.hourly_rate || s.hourlyRate) * durationHours,
-        }
-      })
+  // Calculate total sailor fee
+  const totalSailorFee = selectedSailors.reduce((sum, s) => sum + s.fee, 0)
 
-      // Only update if fees changed
-      const feesChanged = selectedSailors.some((s, i) => s.fee !== updatedSailors[i].fee)
-      if (feesChanged) {
-        onSailorsChange(updatedSailors)
-      }
-    }
-  }, [durationHours, sailors])
+  // Get available sailors (not yet selected)
+  const availableSailors = sailors.filter(
+    s => !selectedSailors.some(ss => ss.sailorId === s.id)
+  )
 
-  if (loading && sailors.length === 0) {
+  if (loading) {
     return (
       <div className="space-y-2">
         <Label className="flex items-center gap-2">
@@ -182,15 +163,23 @@ export default function SailorSelect({
 
   return (
     <div className="space-y-3">
-      <Label className="flex items-center gap-2">
-        <Users className="w-4 h-4" />
-        Sailors
-        {selectedSailors.length > 0 && (
-          <Badge variant="secondary" className="ml-2">
-            {selectedSailors.length} selected
-          </Badge>
-        )}
-      </Label>
+      {/* Sailor Selection Dropdown */}
+      <div>
+        <Label htmlFor="sailor">Add Sailor (Optional)</Label>
+        <Select onValueChange={handleAddSailor} disabled={disabled || availableSailors.length === 0}>
+          <SelectTrigger id="sailor">
+            <SelectValue placeholder="Add a sailor..." />
+          </SelectTrigger>
+          <SelectContent>
+            {availableSailors.map(sailor => (
+              <SelectItem key={sailor.id} value={sailor.id}>
+                {sailor.first_name} {sailor.last_name}
+                {sailor.hourly_rate > 0 && ` - €${sailor.hourly_rate}/h`}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Selected Sailors List */}
       {selectedSailors.length > 0 && (
@@ -209,7 +198,7 @@ export default function SailorSelect({
                     {sailor.first_name} {sailor.last_name}
                   </span>
                   <span className="text-sm text-muted-foreground">
-                    ({selected.hourlyRate > 0 ? `€${selected.hourlyRate}/h` : 'No charge'})
+                    {sailor.hourly_rate > 0 ? `€${sailor.hourly_rate}/h` : 'No charge'}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -233,38 +222,6 @@ export default function SailorSelect({
               </div>
             )
           })}
-        </div>
-      )}
-
-      {/* Add Sailor Dropdown */}
-      {availableSailors.length > 0 && (
-        <div className="flex gap-2">
-          <Select
-            value={addingSailor}
-            onValueChange={setAddingSailor}
-            disabled={disabled}
-          >
-            <SelectTrigger className="flex-1">
-              <SelectValue placeholder="Add a sailor..." />
-            </SelectTrigger>
-            <SelectContent>
-              {availableSailors.map(sailor => (
-                <SelectItem key={sailor.id} value={sailor.id}>
-                  {sailor.first_name} {sailor.last_name}
-                  {sailor.hourly_rate > 0 && ` - €${sailor.hourly_rate}/h`}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={handleAddSailor}
-            disabled={disabled || !addingSailor}
-          >
-            <Plus className="w-4 h-4" />
-          </Button>
         </div>
       )}
 

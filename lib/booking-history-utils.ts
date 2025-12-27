@@ -28,12 +28,15 @@ const FIELD_LABELS: Record<string, string> = {
   deposit_amount: 'Deposit Amount',
   deposit_paid: 'Deposit Paid',
   captain_fee: 'Captain Fee',
+  sailor_fee: 'Sailor Fee',
   agent_commission: 'Agent Commission',
   status: 'Status',
   notes: 'Notes',
   boat_id: 'Boat',
   agent_id: 'Agent',
   captain_id: 'Captain',
+  sailors: 'Sailors',
+  sailor_count: 'Number of Sailors',
   source: 'Source',
   hold_until: 'Hold Until',
   completed_at: 'Completed At',
@@ -76,8 +79,16 @@ function formatValue(field: string, value: any): string {
   }
 
   // Currency fields
-  if (['total_price', 'deposit_amount', 'captain_fee', 'agent_commission'].includes(field)) {
+  if (['total_price', 'deposit_amount', 'captain_fee', 'sailor_fee', 'agent_commission'].includes(field)) {
     return `€${Number(value).toFixed(2)}`
+  }
+
+  // Sailors array (just show count for now)
+  if (field === 'sailors') {
+    if (Array.isArray(value)) {
+      return value.length === 0 ? 'None' : `${value.length} sailor(s)`
+    }
+    return 'None'
   }
 
   // Package type

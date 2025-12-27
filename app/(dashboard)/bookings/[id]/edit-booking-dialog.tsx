@@ -201,10 +201,23 @@ export default function EditBookingDialog({
         throw new Error(data.error || 'Failed to update booking')
       }
 
+      // Get current user's role for permission check (don't rely on async state)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        throw new Error('User not authenticated')
+      }
+
+      const { data: currentUserRecord } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
       // Update sailors if user has permission
-      const canAssignCrew = ['admin', 'manager', 'office_staff'].includes(userRole)
+      const currentUserRole = currentUserRecord?.role || ''
+      const canAssignCrew = ['admin', 'manager', 'office_staff'].includes(currentUserRole)
       console.log('🤖 DEBUG: Sailor save check', {
-        userRole,
+        currentUserRole,
         canAssignCrew,
         originalSailorsLength: originalSailors.length,
         selectedSailorsLength: selectedSailors.length,

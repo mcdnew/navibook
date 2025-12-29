@@ -7,7 +7,8 @@ import {
   CalendarDays,
   Anchor,
   UserCircle2,
-  Wallet
+  Wallet,
+  Settings
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -48,6 +49,12 @@ const navItems: NavItem[] = [
     icon: Wallet,
     label: 'Payments',
     matchPaths: ['/payments'],
+  },
+  {
+    href: '/settings',
+    icon: Settings,
+    label: 'Settings',
+    matchPaths: ['/settings'],
   },
 ]
 

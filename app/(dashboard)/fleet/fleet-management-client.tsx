@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Edit, Trash2, Plus, User } from 'lucide-react'
+import { Edit, Trash2, Plus, User, Settings2, AlertCircle, CheckCircle } from 'lucide-react'
 import BoatDialog from './boat-dialog'
 import {
   Dialog,
@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { toast } from 'sonner'
+import BoatFuelConfig from '@/app/components/boats/boat-fuel-config'
 
 interface FleetManagementClientProps {
   boats: any[]
@@ -24,14 +25,21 @@ export default function FleetManagementClient({ boats }: FleetManagementClientPr
   const router = useRouter()
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [fuelConfigDialogOpen, setFuelConfigDialogOpen] = useState(false)
   const [toggleStatusDialogOpen, setToggleStatusDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedBoat, setSelectedBoat] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+  const [fuelConfigStatus, setFuelConfigStatus] = useState<Record<string, boolean>>({})
 
   const handleEdit = (boat: any) => {
     setSelectedBoat(boat)
     setEditDialogOpen(true)
+  }
+
+  const handleFuelConfig = (boat: any) => {
+    setSelectedBoat(boat)
+    setFuelConfigDialogOpen(true)
   }
 
   const handleToggleStatus = (boat: any) => {
@@ -109,6 +117,29 @@ export default function FleetManagementClient({ boats }: FleetManagementClientPr
     }
   }
 
+  // Check fuel config status for motorboats and jetskis
+  useEffect(() => {
+    const checkFuelConfigStatus = async () => {
+      const motorBoats = boats.filter(b => b.boat_type === 'motorboat' || b.boat_type === 'jetski')
+      const statusMap: Record<string, boolean> = {}
+
+      for (const boat of motorBoats) {
+        try {
+          const response = await fetch(`/api/boats/fuel-config?boatId=${boat.id}`)
+          statusMap[boat.id] = response.ok
+        } catch (error) {
+          statusMap[boat.id] = false
+        }
+      }
+
+      setFuelConfigStatus(statusMap)
+    }
+
+    if (boats.length > 0) {
+      checkFuelConfigStatus()
+    }
+  }, [boats])
+
   return (
     <>
       <div className="flex items-center justify-between mb-6">
@@ -178,16 +209,49 @@ export default function FleetManagementClient({ boats }: FleetManagementClientPr
                 </p>
               )}
 
-              <div className="flex gap-2 pt-3 border-t">
+              {/* Fuel Config Status Indicator - Only for motorboat/jetski */}
+              {(boat.boat_type === 'motorboat' || boat.boat_type === 'jetski') && (
+                <div className="pt-2 border-t">
+                  <div className="flex items-center gap-2 text-xs">
+                    {fuelConfigStatus[boat.id] ? (
+                      <>
+                        <CheckCircle className="w-4 h-4 text-green-600" />
+                        <span className="text-green-600 font-medium">Fuel Configured</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="w-4 h-4 text-amber-600" />
+                        <span className="text-amber-600 font-medium">No Fuel Config</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-3 border-t flex-wrap">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => handleEdit(boat)}
-                  className="flex-1"
+                  className="flex-1 min-w-[80px]"
                 >
                   <Edit className="w-4 h-4 mr-1" />
                   Edit
                 </Button>
+
+                {/* Fuel Config Button - Only for motorboat/jetski */}
+                {(boat.boat_type === 'motorboat' || boat.boat_type === 'jetski') && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleFuelConfig(boat)}
+                    className="text-orange-600 hover:bg-orange-50 border-orange-200"
+                    title="Configure fuel consumption rate and price"
+                  >
+                    <Settings2 className="w-4 h-4" />
+                  </Button>
+                )}
+
                 <Button
                   variant="outline"
                   size="sm"
@@ -251,6 +315,31 @@ export default function FleetManagementClient({ boats }: FleetManagementClientPr
             if (!open) setSelectedBoat(null)
           }}
         />
+      )}
+
+      {/* Fuel Config Dialog */}
+      {selectedBoat && (selectedBoat.boat_type === 'motorboat' || selectedBoat.boat_type === 'jetski') && (
+        <Dialog open={fuelConfigDialogOpen} onOpenChange={setFuelConfigDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Fuel Configuration - {selectedBoat.name}</DialogTitle>
+              <DialogDescription>
+                Configure fuel consumption rate and pricing for this {selectedBoat.boat_type}
+              </DialogDescription>
+            </DialogHeader>
+            <BoatFuelConfig
+              boatId={selectedBoat.id}
+              boatType={selectedBoat.boat_type as 'motorboat' | 'jetski'}
+              boatName={selectedBoat.name}
+              isAdmin={true}
+              onConfigSaved={() => {
+                setFuelConfigDialogOpen(false)
+                setFuelConfigStatus(prev => ({ ...prev, [selectedBoat.id]: true }))
+                router.refresh()
+              }}
+            />
+          </DialogContent>
+        </Dialog>
       )}
 
       {/* Toggle Status Confirmation Dialog */}

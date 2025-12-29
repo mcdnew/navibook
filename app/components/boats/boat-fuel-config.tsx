@@ -13,6 +13,7 @@ interface BoatFuelConfigProps {
   boatType: 'sailboat' | 'motorboat' | 'jetski'
   boatName: string
   isAdmin: boolean
+  onConfigSaved?: () => void
 }
 
 export default function BoatFuelConfig({
@@ -20,6 +21,7 @@ export default function BoatFuelConfig({
   boatType,
   boatName,
   isAdmin,
+  onConfigSaved,
 }: BoatFuelConfigProps) {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -96,6 +98,7 @@ export default function BoatFuelConfig({
       }
 
       toast.success('Fuel configuration saved!')
+      onConfigSaved?.()
     } catch (error) {
       console.error('Error saving fuel config:', error)
       toast.error('Failed to save fuel configuration')

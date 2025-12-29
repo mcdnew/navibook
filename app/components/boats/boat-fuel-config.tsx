@@ -28,11 +28,6 @@ export default function BoatFuelConfig({
   const [fuelConsumptionRate, setFuelConsumptionRate] = useState<string>('0')
   const [fuelPricePerLiter, setFuelPricePerLiter] = useState<string>('0')
 
-  // Show for all boat types when admin
-  if (!isAdmin) {
-    return null
-  }
-
   // Load fuel config
   useEffect(() => {
     async function loadConfig() {
@@ -128,6 +123,11 @@ export default function BoatFuelConfig({
     } finally {
       setSaving(false)
     }
+  }
+
+  // Only render for admin users
+  if (!isAdmin) {
+    return null
   }
 
   return (

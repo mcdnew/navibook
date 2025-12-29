@@ -5,15 +5,15 @@ import { Button } from "@/components/ui/button"
 
 function getManualContent() {
   try {
-    const filePath = path.join(process.cwd(), "docs", "test_version_manual_navibook.md")
+    const filePath = path.join(process.cwd(), "docs", "navibook_manual_en.md")
     return fs.readFileSync(filePath, "utf8")
   } catch {
-    return "Manual file not found. Make sure docs/test_version_manual_navibook.md exists inside the project."
+    return "Manual file not found. Make sure docs/navibook_manual_en.md exists inside the project."
   }
 }
 
 export const metadata = {
-  title: "NaviBook Testing Manual (EN)",
+  title: "NaviBook User Manual - Complete Guide & Quick Start (EN)",
 }
 
 export default function TestManualEnPage() {
@@ -24,9 +24,9 @@ export default function TestManualEnPage() {
       <div className="max-w-5xl mx-auto space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold">Testing Manual (EN)</h1>
+            <h1 className="text-2xl md:text-3xl font-bold">NaviBook User Manual - English</h1>
             <p className="text-muted-foreground text-sm">
-              Read-only HTML view of <code>test_version_manual_navibook.md</code>. Update the markdown file to change this page.
+              Complete user documentation with Quick Start guide (15 min) and comprehensive manual. Read-only view of <code>navibook_manual_en.md</code>.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">

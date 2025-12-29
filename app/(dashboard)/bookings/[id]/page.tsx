@@ -340,6 +340,8 @@ export default async function BookingDetailPage({
               captainFee={booking.captain_fee || 0}
               sailorFee={booking.sailor_fee || 0}
               agentCommission={booking.agent_commission || 0}
+              fuelCost={booking.fuel_cost || 0}
+              packageAddonCost={booking.package_addon_cost || 0}
             />
 
             {/* Commission Info */}

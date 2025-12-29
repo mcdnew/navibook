@@ -1,13 +1,15 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { TrendingUp, TrendingDown, AlertCircle, DollarSign, UserCheck, Users } from 'lucide-react'
+import { TrendingUp, TrendingDown, AlertCircle, DollarSign, UserCheck, Users, Zap } from 'lucide-react'
 
 interface ProfitabilityWidgetProps {
   totalPrice: number
   captainFee: number
   sailorFee: number
   agentCommission: number
+  fuelCost?: number
+  packageAddonCost?: number
 }
 
 export default function ProfitabilityWidget({
@@ -15,9 +17,11 @@ export default function ProfitabilityWidget({
   captainFee,
   sailorFee,
   agentCommission,
+  fuelCost = 0,
+  packageAddonCost = 0,
 }: ProfitabilityWidgetProps) {
-  // Calculate profitability metrics
-  const totalCosts = (captainFee || 0) + (sailorFee || 0) + (agentCommission || 0)
+  // Calculate profitability metrics with all costs
+  const totalCosts = (captainFee || 0) + (sailorFee || 0) + (agentCommission || 0) + (fuelCost || 0) + (packageAddonCost || 0)
   const netProfit = totalPrice - totalCosts
   const profitMargin = totalPrice > 0 ? (netProfit / totalPrice) * 100 : 0
 
@@ -148,6 +152,32 @@ export default function ProfitabilityWidget({
                 </div>
                 <span className="font-semibold text-green-600 dark:text-green-400">
                   -{formatCurrency(agentCommission)}
+                </span>
+              </div>
+            )}
+
+            {/* Fuel Cost */}
+            {fuelCost > 0 && (
+              <div className="flex justify-between items-center pl-6 p-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs w-1 h-1 rounded-full bg-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Fuel Cost</span>
+                </div>
+                <span className="font-semibold text-orange-600 dark:text-orange-400">
+                  -{formatCurrency(fuelCost)}
+                </span>
+              </div>
+            )}
+
+            {/* Package Add-on Cost */}
+            {packageAddonCost > 0 && (
+              <div className="flex justify-between items-center pl-6 p-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs w-1 h-1 rounded-full bg-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Package Add-on Cost</span>
+                </div>
+                <span className="font-semibold text-purple-600 dark:text-purple-400">
+                  -{formatCurrency(packageAddonCost)}
                 </span>
               </div>
             )}

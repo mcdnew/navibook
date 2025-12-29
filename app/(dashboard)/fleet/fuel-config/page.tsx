@@ -22,12 +22,12 @@ export default async function FuelConfigPage() {
 
   if (!userData) redirect('/login')
 
-  // Get all motorboats and jetskis for the company
+  // Get all sailboats, motorboats and jetskis for the company
   const { data: boats } = await supabase
     .from('boats')
     .select('id, name, boat_type, is_active')
     .eq('company_id', userData.company_id)
-    .in('boat_type', ['motorboat', 'jetski'])
+    .in('boat_type', ['sailboat', 'motorboat', 'jetski'])
     .order('name')
 
   // Get all fuel configs
@@ -57,7 +57,7 @@ export default async function FuelConfigPage() {
                 <Fuel className="w-8 h-8 text-orange-600" />
                 Fuel Configuration Manager
               </h1>
-              <p className="text-muted-foreground">Configure fuel settings for all motorboats and jet skis</p>
+              <p className="text-muted-foreground">Configure fuel settings for sailboats, motorboats and jet skis</p>
             </div>
           </div>
           <ThemeToggle />

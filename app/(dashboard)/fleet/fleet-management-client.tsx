@@ -117,10 +117,10 @@ export default function FleetManagementClient({ boats }: FleetManagementClientPr
     }
   }
 
-  // Check fuel config status for motorboats and jetskis
+  // Check fuel config status for sailboats, motorboats and jetskis
   useEffect(() => {
     const checkFuelConfigStatus = async () => {
-      const motorBoats = boats.filter(b => b.boat_type === 'motorboat' || b.boat_type === 'jetski')
+      const motorBoats = boats.filter(b => ['sailboat', 'motorboat', 'jetski'].includes(b.boat_type))
       const statusMap: Record<string, boolean> = {}
 
       for (const boat of motorBoats) {
@@ -209,8 +209,8 @@ export default function FleetManagementClient({ boats }: FleetManagementClientPr
                 </p>
               )}
 
-              {/* Fuel Config Status Indicator - Only for motorboat/jetski */}
-              {(boat.boat_type === 'motorboat' || boat.boat_type === 'jetski') && (
+              {/* Fuel Config Status Indicator - For sailboat/motorboat/jetski */}
+              {['sailboat', 'motorboat', 'jetski'].includes(boat.boat_type) && (
                 <div className="pt-2 border-t">
                   <div className="flex items-center gap-2 text-xs">
                     {fuelConfigStatus[boat.id] ? (
@@ -239,8 +239,8 @@ export default function FleetManagementClient({ boats }: FleetManagementClientPr
                   Edit
                 </Button>
 
-                {/* Fuel Config Button - Only for motorboat/jetski */}
-                {(boat.boat_type === 'motorboat' || boat.boat_type === 'jetski') && (
+                {/* Fuel Config Button - For sailboat/motorboat/jetski */}
+                {['sailboat', 'motorboat', 'jetski'].includes(boat.boat_type) && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -318,7 +318,7 @@ export default function FleetManagementClient({ boats }: FleetManagementClientPr
       )}
 
       {/* Fuel Config Dialog */}
-      {selectedBoat && (selectedBoat.boat_type === 'motorboat' || selectedBoat.boat_type === 'jetski') && (
+      {selectedBoat && ['sailboat', 'motorboat', 'jetski'].includes(selectedBoat.boat_type) && (
         <Dialog open={fuelConfigDialogOpen} onOpenChange={setFuelConfigDialogOpen}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
@@ -329,7 +329,7 @@ export default function FleetManagementClient({ boats }: FleetManagementClientPr
             </DialogHeader>
             <BoatFuelConfig
               boatId={selectedBoat.id}
-              boatType={selectedBoat.boat_type as 'motorboat' | 'jetski'}
+              boatType={selectedBoat.boat_type as 'sailboat' | 'motorboat' | 'jetski'}
               boatName={selectedBoat.name}
               isAdmin={true}
               onConfigSaved={() => {

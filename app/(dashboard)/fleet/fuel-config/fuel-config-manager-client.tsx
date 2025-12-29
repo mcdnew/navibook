@@ -16,7 +16,7 @@ import BoatFuelConfig from '@/app/components/boats/boat-fuel-config'
 interface Boat {
   id: string
   name: string
-  boat_type: 'motorboat' | 'jetski'
+  boat_type: 'sailboat' | 'motorboat' | 'jetski'
   is_active: boolean
 }
 
@@ -58,7 +58,7 @@ export default function FuelConfigManagerClient({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm text-muted-foreground">Total Motorboats & Jet Skis</CardTitle>
+            <CardTitle className="text-sm text-muted-foreground">Total Sailboats, Motorboats & Jet Skis</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">{totalMotorBoats}</p>
@@ -124,7 +124,7 @@ export default function FuelConfigManagerClient({
                       <td className="py-3 px-3 font-medium">{boat.name}</td>
                       <td className="py-3 px-3">
                         <span className="text-xs bg-muted px-2 py-1 rounded">
-                          {boat.boat_type === 'motorboat' ? 'Motorboat' : 'Jet Ski'}
+                          {boat.boat_type === 'sailboat' ? 'Sailboat' : boat.boat_type === 'motorboat' ? 'Motorboat' : 'Jet Ski'}
                         </span>
                       </td>
                       <td className="py-3 px-3 text-center">
@@ -169,9 +169,9 @@ export default function FuelConfigManagerClient({
 
             {boats.length === 0 && (
               <div className="text-center py-8">
-                <p className="text-muted-foreground">No motorboats or jet skis found in your fleet.</p>
+                <p className="text-muted-foreground">No sailboats, motorboats, or jet skis found in your fleet.</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Fuel configuration is only available for motorboats and jet skis.
+                  Fuel configuration is available for sailboats, motorboats, and jet skis.
                 </p>
               </div>
             )}

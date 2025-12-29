@@ -28,8 +28,8 @@ export default function BoatFuelConfig({
   const [fuelConsumptionRate, setFuelConsumptionRate] = useState<string>('0')
   const [fuelPricePerLiter, setFuelPricePerLiter] = useState<string>('0')
 
-  // Only show for motorboat and jetski
-  if (!isAdmin || (boatType !== 'motorboat' && boatType !== 'jetski')) {
+  // Show for all boat types when admin
+  if (!isAdmin) {
     return null
   }
 

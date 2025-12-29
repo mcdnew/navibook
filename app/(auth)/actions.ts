@@ -32,9 +32,9 @@ export async function login(formData: FormData) {
       revalidatePath('/', 'layout')
 
       // Redirect based on role
-      if (userRecord.role === 'admin' || userRecord.role === 'office_staff' || userRecord.role === 'manager') {
+      if (userRecord.role === 'admin' || userRecord.role === 'office_staff' || userRecord.role === 'operations_manager') {
         redirect('/dashboard')
-      } else if (userRecord.role === 'regular_agent' || userRecord.role === 'power_agent') {
+      } else if (userRecord.role === 'sales_agent') {
         redirect('/quick-book')
       } else if (userRecord.role === 'captain' || userRecord.role === 'sailor') {
         redirect('/my-bookings')
@@ -77,7 +77,7 @@ export async function signup(formData: FormData) {
       await supabase.from('users').insert({
         id: authData.user.id,
         company_id: companies.id,
-        role: 'regular_agent',
+        role: 'sales_agent',
         first_name: formData.get('first_name') as string,
         last_name: formData.get('last_name') as string,
         email: data.email,

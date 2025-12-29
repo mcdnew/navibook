@@ -35,7 +35,7 @@ export async function DELETE(request: Request) {
     }
 
     // Only admin and manager can permanently delete boats
-    if (!['admin', 'manager'].includes(userData.role)) {
+    if (!['admin', 'operations_manager'].includes(userData.role)) {
       return NextResponse.json(
         { error: 'Insufficient permissions. Only admins and managers can delete boats.' },
         { status: 403 }

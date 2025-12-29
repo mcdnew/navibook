@@ -21,7 +21,7 @@ export default async function ReportsPage() {
   if (!userRecord) redirect('/login')
 
   // Only admin, manager, and office_staff can access reports
-  if (userRecord.role !== 'admin' && userRecord.role !== 'manager' && userRecord.role !== 'office_staff') {
+  if (userRecord.role !== 'admin' && userRecord.role !== 'operations_manager' && userRecord.role !== 'office_staff') {
     redirect('/dashboard')
   }
 

@@ -38,7 +38,7 @@ export default async function FuelConfigPage() {
   // Create a map of boat_id -> fuel_config
   const fuelConfigMap = new Map((fuelConfigs || []).map(config => [config.boat_id, config]))
 
-  const isAdmin = userData.role === 'admin' || userData.role === 'manager' || userData.role === 'office_staff'
+  const isAdmin = userData.role === 'admin' || userData.role === 'operations_manager' || userData.role === 'office_staff'
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-8">

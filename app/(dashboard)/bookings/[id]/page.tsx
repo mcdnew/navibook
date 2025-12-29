@@ -137,7 +137,7 @@ export default async function BookingDetailPage({
     .order('created_at')
 
   // Check if user has permission to view this booking
-  const isAgent = userRecord.role === 'regular_agent' || userRecord.role === 'power_agent'
+  const isAgent = userRecord.role === 'sales_agent'
   if (isAgent && booking.agent_id !== user.id) {
     redirect('/bookings')
   }

@@ -100,8 +100,8 @@ export default function QuickBookPage() {
   // Sailors
   const [selectedSailors, setSelectedSailors] = useState<SelectedSailor[]>([])
 
-  // Check if user can assign crew (admin/manager/office_staff only)
-  const canAssignCrew = user?.role && ['admin', 'manager', 'office_staff'].includes(user.role)
+  // Check if user can assign crew (admin/operations_manager/office_staff only)
+  const canAssignCrew = user?.role && ['admin', 'operations_manager', 'office_staff'].includes(user.role)
 
   // Calculated values
   const [totalPrice, setTotalPrice] = useState<number>(0)
@@ -120,8 +120,8 @@ export default function QuickBookPage() {
   const [instructors, setInstructors] = useState<any[]>([])
   const [selectedInstructor, setSelectedInstructor] = useState<string>('')
 
-  // Check if user can create internal bookings (admin/manager/office_staff only)
-  const canCreateInternalBookings = user?.role && ['admin', 'manager', 'office_staff'].includes(user.role)
+  // Check if user can create internal bookings (admin/operations_manager/office_staff only)
+  const canCreateInternalBookings = user?.role && ['admin', 'operations_manager', 'office_staff'].includes(user.role)
 
   // UI state
   const [error, setError] = useState<string | null>(null)

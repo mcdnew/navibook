@@ -29,8 +29,8 @@ export default async function CalendarPage() {
     .neq('status', 'cancelled')
     .order('booking_date', { ascending: true })
 
-  // Filter by agent if not admin/manager
-  if (userRecord?.role === 'regular_agent' || userRecord?.role === 'power_agent') {
+  // Filter by agent if not admin/operations_manager
+  if (userRecord?.role === 'sales_agent') {
     bookingsQuery = bookingsQuery.eq('agent_id', user.id)
   }
 

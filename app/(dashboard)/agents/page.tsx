@@ -20,8 +20,8 @@ export default async function AgentsPage() {
 
   if (!currentUser) redirect('/login')
 
-  // Only admin and manager can access agent management
-  if (currentUser.role !== 'admin' && currentUser.role !== 'manager') {
+  // Only admin and operations_manager can access agent management
+  if (currentUser.role !== 'admin' && currentUser.role !== 'operations_manager') {
     redirect('/dashboard')
   }
 
@@ -30,7 +30,7 @@ export default async function AgentsPage() {
     .from('users')
     .select('*')
     .eq('company_id', currentUser.company_id)
-    .in('role', ['regular_agent', 'power_agent', 'admin', 'office_staff', 'manager', 'captain', 'sailor'])
+    .in('role', ['sales_agent', 'admin', 'office_staff', 'operations_manager', 'captain', 'sailor', 'instructor'])
     .order('created_at', { ascending: false })
 
   // Get performance metrics for each agent

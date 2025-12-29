@@ -30,7 +30,7 @@ export default async function BookingsPage() {
     .order('booking_date', { ascending: false })
 
   // Agents see only their bookings
-  if (userRecord?.role === 'regular_agent' || userRecord?.role === 'power_agent') {
+  if (userRecord?.role === 'sales_agent') {
     query = query.eq('agent_id', user.id)
   }
 

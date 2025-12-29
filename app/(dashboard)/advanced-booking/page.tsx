@@ -20,8 +20,8 @@ export default async function AdvancedBookingPage() {
 
   if (!userRecord) redirect('/login')
 
-  // Only admin, manager, and power_agent can access advanced booking
-  if (!['admin', 'manager', 'power_agent'].includes(userRecord.role)) {
+  // Only admin, operations_manager, and sales_agent can access advanced booking
+  if (!['admin', 'operations_manager', 'sales_agent'].includes(userRecord.role)) {
     redirect('/dashboard')
   }
 

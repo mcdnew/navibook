@@ -21,7 +21,7 @@ export default async function PaymentsPage() {
   if (!userRecord) redirect('/login')
 
   // Only admin, manager, office_staff, and accountant can access payments
-  if (!['admin', 'manager', 'office_staff', 'accountant'].includes(userRecord.role)) {
+  if (!['admin', 'operations_manager', 'office_staff', 'accounting_manager'].includes(userRecord.role)) {
     redirect('/dashboard')
   }
 

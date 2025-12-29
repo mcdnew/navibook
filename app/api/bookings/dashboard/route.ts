@@ -39,7 +39,7 @@ export async function GET(request: Request) {
     let query = supabase.from('bookings').select('*, boats(name)')
 
     // Apply role-based filtering
-    const isAdminOrOffice = ['admin', 'office_staff', 'manager'].includes(userRecord.role)
+    const isAdminOrOffice = ['admin', 'office_staff', 'operations_manager'].includes(userRecord.role)
     if (!isAdminOrOffice) {
       // Agents can only see their own bookings
       query = query.eq('agent_id', user.id)

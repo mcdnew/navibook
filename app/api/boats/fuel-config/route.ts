@@ -60,8 +60,8 @@ export async function POST(request: Request) {
       .eq('id', user.id)
       .single()
 
-    // Only admin, manager, or office_staff can create/update fuel config
-    if (!userRecord || !['admin', 'manager', 'office_staff'].includes(userRecord.role)) {
+    // Only admin, operations_manager, or office_staff can create/update fuel config
+    if (!userRecord || !['admin', 'operations_manager', 'office_staff'].includes(userRecord.role)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
@@ -136,8 +136,8 @@ export async function DELETE(request: Request) {
       .eq('id', user.id)
       .single()
 
-    // Only admin, manager, or office_staff can delete fuel config
-    if (!userRecord || !['admin', 'manager', 'office_staff'].includes(userRecord.role)) {
+    // Only admin, operations_manager, or office_staff can delete fuel config
+    if (!userRecord || !['admin', 'operations_manager', 'office_staff'].includes(userRecord.role)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 

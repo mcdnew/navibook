@@ -107,10 +107,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Check permission: only admin/manager/office_staff can assign sailors
-    if (!['admin', 'manager', 'office_staff'].includes(userRecord.role)) {
+    // Check permission: only admin/operations_manager/office_staff can assign sailors
+    if (!['admin', 'operations_manager', 'office_staff'].includes(userRecord.role)) {
       return NextResponse.json(
-        { error: 'Only admin, manager, or office staff can assign sailors' },
+        { error: 'Only admin, operations manager, or office staff can assign sailors' },
         { status: 403 }
       )
     }
@@ -240,9 +240,9 @@ export async function DELETE(request: Request) {
     }
 
     // Check permission
-    if (!['admin', 'manager', 'office_staff'].includes(userRecord.role)) {
+    if (!['admin', 'operations_manager', 'office_staff'].includes(userRecord.role)) {
       return NextResponse.json(
-        { error: 'Only admin, manager, or office staff can remove sailors' },
+        { error: 'Only admin, operations manager, or office staff can remove sailors' },
         { status: 403 }
       )
     }

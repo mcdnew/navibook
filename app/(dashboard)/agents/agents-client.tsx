@@ -58,12 +58,13 @@ type AgentsClientProps = {
 
 const ROLES = [
   { value: 'admin', label: 'Admin', description: 'Full system access' },
-  { value: 'manager', label: 'Manager', description: 'Manage bookings, agents, and pricing' },
-  { value: 'power_agent', label: 'Power Agent', description: 'Create and manage all bookings' },
-  { value: 'regular_agent', label: 'Regular Agent', description: 'Create bookings with holds' },
-  { value: 'office_staff', label: 'Office Staff', description: 'View-only access' },
+  { value: 'operations_manager', label: 'Operations Manager', description: 'Manage bookings, agents, and operations' },
+  { value: 'sales_agent', label: 'Sales Agent', description: 'Create and manage bookings' },
+  { value: 'office_staff', label: 'Office Staff', description: 'Administrative support' },
+  { value: 'accounting_manager', label: 'Accounting Manager', description: 'Financial management' },
   { value: 'captain', label: 'Captain', description: 'Boat captain with hourly rate' },
   { value: 'sailor', label: 'Sailor', description: 'Crew member with hourly rate' },
+  { value: 'instructor', label: 'Instructor', description: 'Training and sailing school' },
 ]
 
 export default function AgentsClient({ agents: initialAgents, currentUserRole }: AgentsClientProps) {
@@ -85,14 +86,14 @@ export default function AgentsClient({ agents: initialAgents, currentUserRole }:
   const [formLastName, setFormLastName] = useState('')
   const [formEmail, setFormEmail] = useState('')
   const [formPhone, setFormPhone] = useState('')
-  const [formRole, setFormRole] = useState('regular_agent')
+  const [formRole, setFormRole] = useState('sales_agent')
   const [formCommission, setFormCommission] = useState('10')
   const [formHourlyRate, setFormHourlyRate] = useState('0')
   const [formPassword, setFormPassword] = useState('')
   const [formIsActive, setFormIsActive] = useState(true)
 
-  // Check if current user can manage agents (admin or manager only)
-  const canManageAgents = currentUserRole === 'admin' || currentUserRole === 'manager'
+  // Check if current user can manage agents (admin or operations_manager only)
+  const canManageAgents = currentUserRole === 'admin' || currentUserRole === 'operations_manager'
 
   // Filter agents
   const filteredAgents = useMemo(() => {
@@ -126,7 +127,7 @@ export default function AgentsClient({ agents: initialAgents, currentUserRole }:
     setFormLastName('')
     setFormEmail('')
     setFormPhone('')
-    setFormRole('regular_agent')
+    setFormRole('sales_agent')
     setFormCommission('10')
     setFormHourlyRate('0')
     setFormPassword('')
@@ -403,9 +404,9 @@ export default function AgentsClient({ agents: initialAgents, currentUserRole }:
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                         agent.role === 'admin'
                           ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300'
-                          : agent.role === 'manager'
+                          : agent.role === 'operations_manager'
                           ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-                          : agent.role === 'power_agent'
+                          : agent.role === 'sales_agent'
                           ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
                           : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
                       }`}>

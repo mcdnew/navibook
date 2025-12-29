@@ -69,8 +69,8 @@ export async function POST(request: Request) {
       )
     }
 
-    // Check if user has permission (admin, manager, or power_agent)
-    if (!['admin', 'manager', 'power_agent'].includes(userData.role)) {
+    // Check if user has permission (admin, operations_manager, or sales_agent)
+    if (!['admin', 'operations_manager', 'sales_agent'].includes(userData.role)) {
       return NextResponse.json(
         { error: 'Insufficient permissions' },
         { status: 403 }

@@ -20,7 +20,7 @@ export default async function SettingsPage() {
 
   if (!userData) redirect('/login')
 
-  const isAdmin = userData.role === 'admin' || userData.role === 'manager' || userData.role === 'office_staff'
+  const isAdmin = userData.role === 'admin' || userData.role === 'operations_manager' || userData.role === 'office_staff'
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">

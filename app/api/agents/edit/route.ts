@@ -52,10 +52,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Only admin and manager can edit agents
-    if (currentUser.role !== 'admin' && currentUser.role !== 'manager') {
+    // Only admin and operations_manager can edit agents
+    if (currentUser.role !== 'admin' && currentUser.role !== 'operations_manager') {
       return NextResponse.json(
-        { error: 'Only admins and managers can edit agents' },
+        { error: 'Only admins and operations managers can edit agents' },
         { status: 403 }
       )
     }

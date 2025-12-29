@@ -44,8 +44,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Only admin, manager, office_staff, and accountant can record payments
-    if (!['admin', 'manager', 'office_staff', 'accountant'].includes(userRecord.role)) {
+    // Only admin, operations_manager, office_staff, and accounting_manager can record payments
+    if (!['admin', 'operations_manager', 'office_staff', 'accounting_manager'].includes(userRecord.role)) {
       return NextResponse.json(
         { error: 'You do not have permission to record payments' },
         { status: 403 }

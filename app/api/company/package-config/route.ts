@@ -64,8 +64,8 @@ export async function PUT(request: Request) {
       .eq('id', user.id)
       .single()
 
-    // Only admin, manager, or office_staff can update package config
-    if (!userRecord || !['admin', 'manager', 'office_staff'].includes(userRecord.role)) {
+    // Only admin, operations_manager, or office_staff can update package config
+    if (!userRecord || !['admin', 'operations_manager', 'office_staff'].includes(userRecord.role)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
@@ -129,8 +129,8 @@ export async function DELETE(request: Request) {
       .eq('id', user.id)
       .single()
 
-    // Only admin, manager, or office_staff can delete package config
-    if (!userRecord || !['admin', 'manager', 'office_staff'].includes(userRecord.role)) {
+    // Only admin, operations_manager, or office_staff can delete package config
+    if (!userRecord || !['admin', 'operations_manager', 'office_staff'].includes(userRecord.role)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 

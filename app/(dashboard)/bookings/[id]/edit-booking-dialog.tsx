@@ -215,7 +215,7 @@ export default function EditBookingDialog({
 
       // Update sailors if user has permission
       const currentUserRole = currentUserRecord?.role || ''
-      const canAssignCrew = ['admin', 'manager', 'office_staff'].includes(currentUserRole)
+      const canAssignCrew = ['admin', 'operations_manager', 'office_staff'].includes(currentUserRole)
       console.log('🤖 DEBUG: Sailor save check', {
         currentUserRole,
         canAssignCrew,
@@ -468,7 +468,7 @@ export default function EditBookingDialog({
           )}
 
           {/* Sailor Selection - SIMPLIFIED like Captain */}
-          {['admin', 'manager', 'office_staff'].includes(userRole) && (
+          {['admin', 'operations_manager', 'office_staff'].includes(userRole) && (
             <div className="space-y-4">
               <h3 className="font-medium text-sm">Sailor Assignment</h3>
               <SailorSelect

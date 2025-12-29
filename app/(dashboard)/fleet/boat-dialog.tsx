@@ -84,7 +84,7 @@ export default function BoatDialog({
       if (!userData) return
 
       // Check if user is admin
-      setIsAdmin(userData.role === 'admin' || userData.role === 'manager' || userData.role === 'office_staff')
+      setIsAdmin(userData.role === 'admin' || userData.role === 'operations_manager' || userData.role === 'office_staff')
 
       const { data, error } = await supabase
         .from('users')

@@ -19,7 +19,7 @@ export default async function PricingPage() {
     .single()
 
   // Only admin and manager can access pricing
-  if (userRecord?.role !== 'admin' && userRecord?.role !== 'manager') {
+  if (userRecord?.role !== 'admin' && userRecord?.role !== 'operations_manager') {
     redirect('/dashboard')
   }
 

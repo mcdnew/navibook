@@ -185,18 +185,23 @@ export default function ReportsClient({ bookings }: ReportsClientProps) {
 
   // Daily profit trend
   const dailyProfitData = useMemo(() => {
-    const dailyMap = new Map<string, { date: string; profit: number; margin: number }>()
+    const dailyMap = new Map<string, { date: string; revenue: number; profit: number; margin: number }>()
 
     filteredBookings
       .filter(b => b.status === 'confirmed' || b.status === 'completed')
       .forEach(b => {
         const date = b.booking_date
-        const existing = dailyMap.get(date) || { date, profit: 0, margin: 0 }
+        const existing = dailyMap.get(date) || { date, revenue: 0, profit: 0, margin: 0 }
 
         const captainCost = b.captain_fee || 0
+        const sailorCost = b.sailor_fee || 0
+        const fuelCost = b.fuel_cost || 0
+        const addonCost = b.package_addon_cost || 0
         const commission = b.agents ? (b.total_price * b.agents.commission_percentage) / 100 : 0
-        const profit = b.total_price - captainCost - commission
+        const totalCosts = captainCost + sailorCost + fuelCost + addonCost + commission
+        const profit = b.total_price - totalCosts
 
+        existing.revenue += b.total_price
         existing.profit += profit
 
         dailyMap.set(date, existing)

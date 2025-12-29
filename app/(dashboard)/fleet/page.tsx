@@ -55,8 +55,14 @@ export default async function FleetPage() {
               Fuel Configuration
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
-            <p>For motorboats and jet skis, click the <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-xs">⚙️</span> button to configure fuel consumption rate (L/hour) and fuel price per liter. These settings will automatically calculate fuel costs for bookings.</p>
+          <CardContent className="text-sm text-muted-foreground space-y-2">
+            <p>Click the <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-xs">⚙️</span> button on any boat to configure fuel consumption and pricing:</p>
+            <ul className="list-disc list-inside space-y-1 ml-2">
+              <li><strong>Sailboats:</strong> Enter pondered consumption (accounting for motor usage ratio). Example: Engine uses 2 L/h, but 50% sailing = 1 L/h entry</li>
+              <li><strong>Motorboats & Jet Skis:</strong> Enter direct fuel consumption rate (L/hour)</li>
+              <li><strong>Pricing:</strong> Set fuel price per liter in €</li>
+            </ul>
+            <p className="mt-2 italic">Fuel costs are automatically calculated and tracked as operational expenses for each booking.</p>
           </CardContent>
         </Card>
 

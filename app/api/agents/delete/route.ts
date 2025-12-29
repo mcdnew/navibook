@@ -69,34 +69,23 @@ export async function POST(request: Request) {
       )
     }
 
-    // Delete auth user
-    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(agentId)
-
-    if (authError) {
-      console.error('Auth user deletion error:', authError)
-      return NextResponse.json(
-        { error: authError.message || 'Failed to delete auth user' },
-        { status: 500 }
-      )
-    }
-
-    // Delete user record (this should cascade due to foreign key constraints)
-    const { error: deleteError } = await supabase
+    // Archive the user by setting is_active to false (preserves historical data)
+    const { error: updateError } = await supabase
       .from('users')
-      .delete()
+      .update({ is_active: false, updated_at: new Date().toISOString() })
       .eq('id', agentId)
 
-    if (deleteError) {
-      console.error('User record deletion error:', deleteError)
+    if (updateError) {
+      console.error('User archival error:', updateError)
       return NextResponse.json(
-        { error: deleteError.message || 'Failed to delete user record' },
+        { error: updateError.message || 'Failed to archive user' },
         { status: 500 }
       )
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Agent deleted successfully',
+      message: 'Agent archived successfully',
     })
   } catch (error: any) {
     console.error('Delete agent API error:', error)

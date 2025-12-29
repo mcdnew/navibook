@@ -223,7 +223,7 @@ export default function AgentsClient({ agents: initialAgents, currentUserRole }:
     }
   }
 
-  const handleDeleteAgent = async () => {
+  const handleArchiveAgent = async () => {
     if (!selectedAgent) return
 
     setLoading(true)
@@ -239,15 +239,15 @@ export default function AgentsClient({ agents: initialAgents, currentUserRole }:
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to delete agent')
+        throw new Error(data.error || 'Failed to archive agent')
       }
 
-      toast.success('Agent deleted successfully!')
+      toast.success('Agent archived successfully! All historical data is preserved.')
       setShowDeleteDialog(false)
       setSelectedAgent(null)
       router.refresh()
     } catch (error: any) {
-      toast.error('Failed to delete agent', {
+      toast.error('Failed to archive agent', {
         description: error.message,
       })
     } finally {
@@ -750,20 +750,19 @@ export default function AgentsClient({ agents: initialAgents, currentUserRole }:
         </DialogContent>
       </Dialog>
 
-      {/* Delete Agent Dialog */}
+      {/* Archive Agent Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Agent</DialogTitle>
+            <DialogTitle>Archive Agent</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete {selectedAgent?.first_name} {selectedAgent?.last_name}?
-              This action cannot be undone.
+              Archive {selectedAgent?.first_name} {selectedAgent?.last_name}? They will no longer be able to log in or create new bookings, but all their historical data will be preserved.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-            <p className="text-sm text-amber-800 dark:text-amber-200">
-              <strong>Warning:</strong> Deleting this agent will not delete their bookings, but they will no longer be able to log in or create new bookings.
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <p className="text-sm text-blue-800 dark:text-blue-200">
+              <strong>Info:</strong> Archiving preserves all historical data (bookings, payments, transactions). The agent can be reactivated later if needed by editing their account and setting status to active.
             </p>
           </div>
 
@@ -771,14 +770,14 @@ export default function AgentsClient({ agents: initialAgents, currentUserRole }:
             <Button variant="outline" onClick={() => setShowDeleteDialog(false)} disabled={loading}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDeleteAgent} disabled={loading}>
+            <Button variant="destructive" onClick={handleArchiveAgent} disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Deleting...
+                  Archiving...
                 </>
               ) : (
-                'Delete Agent'
+                'Archive Agent'
               )}
             </Button>
           </DialogFooter>

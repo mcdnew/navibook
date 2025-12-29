@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { calculateFuelCost, calculatePackageAddonCost } from '@/lib/booking/cost-calculator'
+
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
@@ -107,6 +109,27 @@ export async function POST(request: Request) {
       )
     }
 
+    // Recalculate costs if package_type or passengers changed
+    let fuelCost = currentBooking.fuel_cost || 0
+    let packageAddonCost = currentBooking.package_addon_cost || 0
+
+    try {
+      // Recalculate fuel cost (unchanged booking date/duration so fuel cost stays same)
+      fuelCost = await calculateFuelCost(currentBooking.boat_id, currentBooking.duration)
+
+      // Recalculate package addon cost (may change if passengers or packageType changed)
+      const newPackageType = packageType || currentBooking.package_type
+      const newPassengers = passengers || currentBooking.passengers
+      packageAddonCost = await calculatePackageAddonCost(
+        userRecord.company_id,
+        newPackageType,
+        newPassengers
+      )
+    } catch (costError) {
+      console.error('Error recalculating costs:', costError)
+      // Continue with update even if cost calculation fails
+    }
+
     // Prepare update data
     const updateData: any = {
       customer_name: customerName,
@@ -116,6 +139,8 @@ export async function POST(request: Request) {
       package_type: packageType,
       deposit_amount: depositAmount,
       notes: notes,
+      fuel_cost: fuelCost,
+      package_addon_cost: packageAddonCost,
     }
 
     // Only update captain if user has permission

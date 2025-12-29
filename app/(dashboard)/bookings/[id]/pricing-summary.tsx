@@ -159,17 +159,28 @@ export default function PricingSummary({
               ) : (
                 <TrendingUp className="w-5 h-5 text-orange-600 dark:text-orange-400" />
               )}
-              <span
-                className={`text-sm font-semibold ${
-                  isFullyPaid
-                    ? 'text-green-700 dark:text-green-400'
-                    : outstandingBalance < totalPrice
-                    ? 'text-blue-700 dark:text-blue-400'
-                    : 'text-orange-700 dark:text-orange-400'
-                }`}
-              >
-                {isFullyPaid ? 'Fully Paid' : 'Outstanding Balance'}
-              </span>
+              <div className="flex flex-col gap-1">
+                <span
+                  className={`text-sm font-semibold ${
+                    isFullyPaid
+                      ? 'text-green-700 dark:text-green-400'
+                      : outstandingBalance < totalPrice
+                      ? 'text-blue-700 dark:text-blue-400'
+                      : 'text-orange-700 dark:text-orange-400'
+                  }`}
+                >
+                  {isFullyPaid
+                    ? 'Payment Status'
+                    : outstandingBalance === totalPrice
+                    ? 'Total Amount Due'
+                    : 'Outstanding Balance'}
+                </span>
+                {isFullyPaid && (
+                  <span className="text-xs font-normal text-green-600 dark:text-green-400">
+                    No balance remaining
+                  </span>
+                )}
+              </div>
             </div>
             <span
               className={`text-2xl font-bold ${
@@ -185,7 +196,7 @@ export default function PricingSummary({
           </div>
 
           {/* Payment Breakdown (if any payments made) */}
-          {actualPaidAmount > 0 && !isFullyPaid && (
+          {actualPaidAmount > 0 && (
             <div className="text-xs text-muted-foreground space-y-1 pt-2">
               <div className="flex justify-between">
                 <span>Total Price:</span>

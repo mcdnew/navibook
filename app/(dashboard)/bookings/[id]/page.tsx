@@ -27,6 +27,7 @@ import {
 import BookingActions from './booking-actions'
 import BookingHistoryTimeline from './booking-history-timeline'
 import PricingSummary from './pricing-summary'
+import ProfitabilityWidget from './profitability-widget'
 
 interface BookingHistoryEntry {
   id: string
@@ -331,6 +332,14 @@ export default async function BookingDetailPage({
               depositAmount={booking.deposit_amount}
               depositPaid={booking.deposit_paid}
               paymentTransactions={booking.payment_transactions || []}
+            />
+
+            {/* Profitability Analysis */}
+            <ProfitabilityWidget
+              totalPrice={booking.total_price}
+              captainFee={booking.captain_fee || 0}
+              sailorFee={booking.sailor_fee || 0}
+              agentCommission={booking.agent_commission || 0}
             />
 
             {/* Commission Info */}

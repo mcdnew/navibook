@@ -48,14 +48,15 @@ export async function GET(request: Request) {
       query = query.eq('company_id', userRecord.company_id)
     }
 
-    // Fetch upcoming bookings (next 10 future bookings)
+    // Fetch upcoming bookings (next 10 future bookings, exclude cancelled)
     const { data: upcoming } = await query
+      .neq('status', 'cancelled')
       .gte('booking_date', today)
       .order('booking_date', { ascending: true })
       .order('start_time', { ascending: true })
       .limit(10)
 
-    // Fetch latest created bookings
+    // Fetch latest created bookings (exclude cancelled)
     let latestQuery = supabase.from('bookings').select('*, boats(name)')
     if (!isAdminOrOffice) {
       latestQuery = latestQuery.eq('agent_id', user.id)
@@ -64,6 +65,7 @@ export async function GET(request: Request) {
     }
 
     const { data: latest } = await latestQuery
+      .neq('status', 'cancelled')
       .order('created_at', { ascending: false })
       .limit(10)
 

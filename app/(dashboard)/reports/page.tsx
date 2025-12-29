@@ -25,7 +25,7 @@ export default async function ReportsPage() {
     redirect('/dashboard')
   }
 
-  // Get all bookings with agent and boat info
+  // Get all bookings with agent and boat info (exclude cancelled)
   const { data: bookings } = await supabase
     .from('bookings')
     .select(`
@@ -34,6 +34,7 @@ export default async function ReportsPage() {
       boats(name, boat_type)
     `)
     .eq('company_id', userRecord.company_id)
+    .neq('status', 'cancelled')
     .order('booking_date', { ascending: false })
 
   return (

@@ -242,9 +242,10 @@ export default function ReportsClient({ bookings }: ReportsClientProps) {
         netProfit: 0
       }
 
-      existing.count++
-
+      // Only count confirmed or completed bookings (exclude cancelled)
       if (b.status === 'confirmed' || b.status === 'completed') {
+        existing.count++
+
         const captainCost = b.captain_fee || 0
         const sailorCost = b.sailor_fee || 0
         const fuelCost = b.fuel_cost || 0
@@ -276,15 +277,16 @@ export default function ReportsClient({ bookings }: ReportsClientProps) {
       // Skip bookings without agent data
       if (!b.agents || !b.agent_id) return
 
-      const key = b.agent_id
-      const name = `${b.agents.first_name} ${b.agents.last_name}`
-      const existing = agentMap.get(key) || { name, count: 0, revenue: 0, commission: 0 }
-      existing.count++
+      // Only count confirmed or completed bookings (exclude cancelled)
       if (b.status === 'confirmed' || b.status === 'completed') {
+        const key = b.agent_id
+        const name = `${b.agents.first_name} ${b.agents.last_name}`
+        const existing = agentMap.get(key) || { name, count: 0, revenue: 0, commission: 0 }
+        existing.count++
         existing.revenue += b.total_price
         existing.commission += (b.total_price * b.agents.commission_percentage) / 100
+        agentMap.set(key, existing)
       }
-      agentMap.set(key, existing)
     })
 
     return Array.from(agentMap.values()).sort((a, b) => b.revenue - a.revenue)
@@ -294,12 +296,13 @@ export default function ReportsClient({ bookings }: ReportsClientProps) {
   const packageStats = useMemo(() => {
     const packageMap = new Map<string, { count: number; revenue: number }>()
     filteredBookings.forEach(b => {
-      const existing = packageMap.get(b.package_type) || { count: 0, revenue: 0 }
-      existing.count++
+      // Only count confirmed or completed bookings (exclude cancelled)
       if (b.status === 'confirmed' || b.status === 'completed') {
+        const existing = packageMap.get(b.package_type) || { count: 0, revenue: 0 }
+        existing.count++
         existing.revenue += b.total_price
+        packageMap.set(b.package_type, existing)
       }
-      packageMap.set(b.package_type, existing)
     })
 
     return Array.from(packageMap.entries()).map(([type, stats]) => ({

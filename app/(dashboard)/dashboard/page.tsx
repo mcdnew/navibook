@@ -67,6 +67,7 @@ export default async function DashboardPage() {
   const { data: bookings } = await supabase
     .from('bookings')
     .select('*')
+    .neq('status', 'cancelled')
     .gte('booking_date', new Date().toISOString().split('T')[0])
     .order('booking_date', { ascending: true })
     .limit(10)

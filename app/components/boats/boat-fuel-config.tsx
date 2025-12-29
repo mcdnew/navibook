@@ -160,12 +160,18 @@ export default function BoatFuelConfig({
                   step="0.1"
                   value={fuelConsumptionRate}
                   onChange={(e) => setFuelConsumptionRate(e.target.value)}
-                  placeholder="e.g., 20"
+                  placeholder={boatType === 'sailboat' ? 'e.g., 1' : 'e.g., 20'}
                   disabled={saving}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Liters of fuel consumed per hour of operation
-                </p>
+                {boatType === 'sailboat' ? (
+                  <p className="text-xs text-muted-foreground">
+                    <strong>Pondered consumption:</strong> Account for motor usage ratio. Example: Engine consumes 2 L/h, but assumed 50% motoring + 50% sailing = 1 L/h (2 × 0.5).
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Liters of fuel consumed per hour of operation
+                  </p>
+                )}
               </div>
 
               {/* Fuel Price Per Liter */}
@@ -199,6 +205,28 @@ export default function BoatFuelConfig({
                 This cost is tracked as an operational expense and reduces your profitability. It is NOT added to the customer price.
               </p>
             </div>
+
+            {/* Sailboat-specific guidance */}
+            {boatType === 'sailboat' && (
+              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                <p className="text-sm text-amber-900 dark:text-amber-100">
+                  <strong>Sailboat fuel consumption:</strong> Enter a pondered (weighted average) consumption rate that accounts for your typical motor usage ratio. This ensures costs are close to real-world consumption.
+                  <br />
+                  <br />
+                  <strong>Example calculation:</strong>
+                  <br />
+                  • Engine specs: 2 L/hour when motoring at full throttle
+                  <br />
+                  • Typical usage: 50% motoring, 50% sailing
+                  <br />
+                  • Pondered consumption: 2 L/h × 0.5 = <span className="font-mono">1 L/h</span>
+                  <br />
+                  <br />
+                  For a 10-hour charter with 1 L/h input and €1.50/L price = €15 fuel cost
+                </p>
+              </div>
+            )}
+
 
             {/* Buttons */}
             <div className="flex gap-2 pt-2">

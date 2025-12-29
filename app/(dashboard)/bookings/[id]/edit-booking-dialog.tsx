@@ -62,6 +62,7 @@ export default function EditBookingDialog({
   const [notes, setNotes] = useState(booking.notes || '')
   const [totalPrice, setTotalPrice] = useState(booking.total_price)
   const [loadingPrice, setLoadingPrice] = useState(false)
+  const [captainFee, setCaptainFee] = useState(booking.captain_fee || 0)
 
   // Load captains, user role, and existing sailors on mount
   useEffect(() => {
@@ -114,6 +115,23 @@ export default function EditBookingDialog({
       loadData()
     }
   }, [open, supabase, booking.id])
+
+  // Calculate captain fee when captain changes
+  useEffect(() => {
+    if (!captainId || captainId === 'none') {
+      setCaptainFee(0)
+      return
+    }
+
+    const captain = captains.find(c => c.id === captainId)
+    if (captain && captain.hourly_rate) {
+      const durationHours = parseInt(booking.duration.replace('h', ''))
+      const fee = captain.hourly_rate * durationHours
+      setCaptainFee(fee)
+    } else {
+      setCaptainFee(0)
+    }
+  }, [captainId, captains, booking.duration])
 
   // Fetch pricing when package type changes
   useEffect(() => {
@@ -189,6 +207,7 @@ export default function EditBookingDialog({
           passengers: passengersNum,
           packageType,
           captainId: captainId === 'none' ? null : captainId,
+          captainFee,
           totalPrice,
           depositAmount: depositNum,
           notes: notes.trim() || null,
@@ -332,6 +351,7 @@ export default function EditBookingDialog({
       passengers !== booking.passengers.toString() ||
       packageType !== booking.package_type ||
       captainId !== originalCaptainId ||
+      captainFee !== (booking.captain_fee || 0) ||
       totalPrice !== booking.total_price ||
       depositAmount !== booking.deposit_amount.toString() ||
       notes !== (booking.notes || '') ||
@@ -464,6 +484,14 @@ export default function EditBookingDialog({
                   </SelectContent>
                 </Select>
               </div>
+              {captainId !== 'none' && captainFee > 0 && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-sm">
+                    <span className="text-muted-foreground">Captain Fee: </span>
+                    <span className="font-semibold text-blue-600">€{captainFee.toFixed(2)}</span>
+                  </p>
+                </div>
+              )}
             </div>
           )}
 

@@ -32,6 +32,19 @@ const CompanyInfoEditor = dynamic(() => import('@/app/components/company/company
   ),
 })
 
+const PackageConfigSettings = dynamic(() => import('@/app/components/company/package-config-settings'), {
+  ssr: false,
+  loading: () => (
+    <Card className="maritime-card">
+      <CardContent className="pt-6">
+        <div className="flex items-center justify-center py-8">
+          <p className="text-muted-foreground">Loading package configuration...</p>
+        </div>
+      </CardContent>
+    </Card>
+  ),
+})
+
 export default async function CompanySettingsPage() {
   const supabase = await createClient()
 
@@ -76,6 +89,9 @@ export default async function CompanySettingsPage() {
 
         {/* Location Settings Component */}
         <LocationSettings isAdmin={isAdmin} />
+
+        {/* Package Configuration Settings Component */}
+        <PackageConfigSettings isAdmin={isAdmin} />
 
         {/* Admin Info */}
         {!isAdmin && (

@@ -62,6 +62,10 @@ type Booking = {
   boat_id: string
   agents: { first_name: string; last_name: string; commission_percentage: number }
   boats: { name: string; boat_type: string }
+  fuel_cost?: number
+  package_addon_cost?: number
+  booking_category?: string
+  discount_percentage?: number
 }
 
 type ReportsClientProps = {
@@ -137,11 +141,13 @@ export default function ReportsClient({ bookings }: ReportsClientProps) {
     // Cost breakdown
     const totalCaptainCosts = confirmed.reduce((sum, b) => sum + (b.captain_fee || 0), 0)
     const totalSailorCosts = confirmed.reduce((sum, b) => sum + (b.sailor_fee || 0), 0)
+    const totalFuelCosts = confirmed.reduce((sum, b) => sum + (b.fuel_cost || 0), 0)
+    const totalPackageAddonCosts = confirmed.reduce((sum, b) => sum + (b.package_addon_cost || 0), 0)
     const totalCommissions = confirmed.reduce((sum, b) => {
       if (!b.agents || !b.agent_id) return sum
       return sum + (b.total_price * b.agents.commission_percentage) / 100
     }, 0)
-    const totalCosts = totalCaptainCosts + totalSailorCosts + totalCommissions
+    const totalCosts = totalCaptainCosts + totalSailorCosts + totalFuelCosts + totalPackageAddonCosts + totalCommissions
 
     // Profit analysis
     const netProfit = totalRevenue - totalCosts
@@ -153,6 +159,8 @@ export default function ReportsClient({ bookings }: ReportsClientProps) {
       confirmedCount: confirmed.length,
       totalCaptainCosts,
       totalSailorCosts,
+      totalFuelCosts,
+      totalPackageAddonCosts,
       totalCommissions,
       totalCosts,
       netProfit,
@@ -205,6 +213,8 @@ export default function ReportsClient({ bookings }: ReportsClientProps) {
       revenue: number
       captainCosts: number
       sailorCosts: number
+      fuelCosts: number
+      addonCosts: number
       commissions: number
       netProfit: number
     }>()
@@ -220,6 +230,8 @@ export default function ReportsClient({ bookings }: ReportsClientProps) {
         revenue: 0,
         captainCosts: 0,
         sailorCosts: 0,
+        fuelCosts: 0,
+        addonCosts: 0,
         commissions: 0,
         netProfit: 0
       }
@@ -229,14 +241,18 @@ export default function ReportsClient({ bookings }: ReportsClientProps) {
       if (b.status === 'confirmed' || b.status === 'completed') {
         const captainCost = b.captain_fee || 0
         const sailorCost = b.sailor_fee || 0
+        const fuelCost = b.fuel_cost || 0
+        const addonCost = b.package_addon_cost || 0
         const commissionPercent = b.agents?.commission_percentage || 0
         const commission = b.total_price * (commissionPercent / 100)
-        const totalCosts = captainCost + sailorCost + commission
+        const totalCosts = captainCost + sailorCost + fuelCost + addonCost + commission
         const netProfit = b.total_price - totalCosts
 
         existing.revenue += b.total_price
         existing.captainCosts += captainCost
         existing.sailorCosts += sailorCost
+        existing.fuelCosts += fuelCost
+        existing.addonCosts += addonCost
         existing.commissions += commission
         existing.netProfit += netProfit
       }
@@ -329,6 +345,98 @@ export default function ReportsClient({ bookings }: ReportsClientProps) {
     }))
   }, [filteredBookings])
 
+  // Revenue by booking category
+  const revenueByBookingCategory = useMemo(() => {
+    const categoryMap = new Map<string, { revenue: number; count: number }>()
+
+    filteredBookings
+      .filter(b => b.status === 'confirmed' || b.status === 'completed')
+      .forEach(b => {
+        const category = b.booking_category || 'commercial'
+        const existing = categoryMap.get(category) || { revenue: 0, count: 0 }
+        existing.revenue += b.total_price
+        existing.count++
+        categoryMap.set(category, existing)
+      })
+
+    return Array.from(categoryMap.entries()).map(([category, data]) => ({
+      name: category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      revenue: data.revenue,
+      count: data.count
+    })).sort((a, b) => b.revenue - a.revenue)
+  }, [filteredBookings])
+
+  // Fuel cost analysis
+  const fuelCostAnalysis = useMemo(() => {
+    const confirmed = filteredBookings.filter(b => b.status === 'confirmed' || b.status === 'completed')
+    const bookingsWithFuel = confirmed.filter(b => (b.fuel_cost || 0) > 0)
+    const totalFuelCost = confirmed.reduce((sum, b) => sum + (b.fuel_cost || 0), 0)
+    const avgFuelPerBooking = bookingsWithFuel.length > 0 ? totalFuelCost / bookingsWithFuel.length : 0
+
+    // Fuel costs by boat type
+    const boatTypeMap = new Map<string, { fuelCost: number; count: number }>()
+    confirmed.forEach(b => {
+      if (b.boats && (b.fuel_cost || 0) > 0) {
+        const boatType = b.boats.boat_type
+        const existing = boatTypeMap.get(boatType) || { fuelCost: 0, count: 0 }
+        existing.fuelCost += b.fuel_cost || 0
+        existing.count++
+        boatTypeMap.set(boatType, existing)
+      }
+    })
+
+    const fuelByBoatType = Array.from(boatTypeMap.entries()).map(([type, data]) => ({
+      boatType: type,
+      totalFuelCost: data.fuelCost,
+      avgFuelCost: data.count > 0 ? data.fuelCost / data.count : 0,
+      count: data.count
+    }))
+
+    return {
+      totalFuelCost,
+      avgFuelPerBooking,
+      bookingsWithFuelCount: bookingsWithFuel.length,
+      fuelByBoatType
+    }
+  }, [filteredBookings])
+
+  // Profitability by booking category
+  const profitabilityByCategory = useMemo(() => {
+    const categoryMap = new Map<string, { revenue: number; costs: number; count: number }>()
+
+    filteredBookings
+      .filter(b => b.status === 'confirmed' || b.status === 'completed')
+      .forEach(b => {
+        const category = b.booking_category || 'commercial'
+        const existing = categoryMap.get(category) || { revenue: 0, costs: 0, count: 0 }
+
+        const captainCost = b.captain_fee || 0
+        const sailorCost = b.sailor_fee || 0
+        const fuelCost = b.fuel_cost || 0
+        const addonCost = b.package_addon_cost || 0
+        const commission = b.agents ? (b.total_price * b.agents.commission_percentage) / 100 : 0
+        const totalCosts = captainCost + sailorCost + fuelCost + addonCost + commission
+
+        existing.revenue += b.total_price
+        existing.costs += totalCosts
+        existing.count++
+        categoryMap.set(category, existing)
+      })
+
+    return Array.from(categoryMap.entries()).map(([category, data]) => {
+      const profit = data.revenue - data.costs
+      const margin = data.revenue > 0 ? (profit / data.revenue) * 100 : 0
+      return {
+        name: category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        revenue: data.revenue,
+        costs: data.costs,
+        profit,
+        margin,
+        count: data.count
+      }
+    }).sort((a, b) => b.profit - a.profit)
+  }, [filteredBookings])
+
   // Cost composition for pie chart
   const costComposition = useMemo(() => {
     const data = []
@@ -337,6 +445,12 @@ export default function ReportsClient({ bookings }: ReportsClientProps) {
     }
     if (revenueData.totalSailorCosts > 0) {
       data.push({ name: 'Sailor Costs', value: revenueData.totalSailorCosts, color: '#8B5CF6' })
+    }
+    if (revenueData.totalFuelCosts > 0) {
+      data.push({ name: 'Fuel Costs', value: revenueData.totalFuelCosts, color: '#FB923C' })
+    }
+    if (revenueData.totalPackageAddonCosts > 0) {
+      data.push({ name: 'Package Addon Costs', value: revenueData.totalPackageAddonCosts, color: '#A855F7' })
     }
     if (revenueData.totalCommissions > 0) {
       data.push({ name: 'Agent Commissions', value: revenueData.totalCommissions, color: '#00C49F' })
@@ -361,9 +475,11 @@ export default function ReportsClient({ bookings }: ReportsClientProps) {
 
         const captainCost = b.captain_fee || 0
         const sailorCost = b.sailor_fee || 0
+        const fuelCost = b.fuel_cost || 0
+        const addonCost = b.package_addon_cost || 0
         const commission = b.agents ? (b.total_price * b.agents.commission_percentage) / 100 : 0
-        existing.costs += captainCost + sailorCost + commission
-        existing.profit += b.total_price - captainCost - sailorCost - commission
+        existing.costs += captainCost + sailorCost + fuelCost + addonCost + commission
+        existing.profit += b.total_price - captainCost - sailorCost - fuelCost - addonCost - commission
 
         dailyMap.set(date, existing)
       })
@@ -375,16 +491,18 @@ export default function ReportsClient({ bookings }: ReportsClientProps) {
     if (type === 'csv') {
       // Comprehensive CSV export with all cost details
       const headers = [
-        'Date', 'Boat', 'Agent', 'Agent Commission %', 'Package', 'Status',
-        'Revenue', 'Captain Cost', 'Sailor Cost', 'Commission Cost', 'Total Costs', 'Net Profit', 'Profit Margin %'
+        'Date', 'Boat', 'Agent', 'Agent Commission %', 'Package', 'Booking Category', 'Status',
+        'Revenue', 'Captain Cost', 'Sailor Cost', 'Fuel Cost', 'Package Addon Cost', 'Commission Cost', 'Total Costs', 'Net Profit', 'Profit Margin %'
       ]
 
       const rows = filteredBookings.map(b => {
         const captainCost = b.captain_fee || 0
         const sailorCost = b.sailor_fee || 0
+        const fuelCost = b.fuel_cost || 0
+        const addonCost = b.package_addon_cost || 0
         const commissionPercent = b.agents?.commission_percentage || 0
         const commissionCost = b.total_price * (commissionPercent / 100)
-        const totalCosts = captainCost + sailorCost + commissionCost
+        const totalCosts = captainCost + sailorCost + fuelCost + addonCost + commissionCost
         const netProfit = b.total_price - totalCosts
         const profitMargin = b.total_price > 0 ? (netProfit / b.total_price) * 100 : 0
 
@@ -394,10 +512,13 @@ export default function ReportsClient({ bookings }: ReportsClientProps) {
           b.agents ? `${b.agents.first_name} ${b.agents.last_name}` : 'N/A',
           commissionPercent.toFixed(0) + '%',
           b.package_type,
+          b.booking_category || 'commercial',
           b.status,
           b.total_price.toFixed(2),
           captainCost.toFixed(2),
           sailorCost.toFixed(2),
+          fuelCost.toFixed(2),
+          addonCost.toFixed(2),
           commissionCost.toFixed(2),
           totalCosts.toFixed(2),
           netProfit.toFixed(2),
@@ -407,9 +528,10 @@ export default function ReportsClient({ bookings }: ReportsClientProps) {
 
       // Add summary row
       rows.push([])
-      rows.push(['SUMMARY', '', '', '', '', '', '', '', '', '', '', '', ''])
+      rows.push(['SUMMARY', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''])
       rows.push([
         'Total Revenue',
+        '',
         '',
         '',
         '',
@@ -418,6 +540,8 @@ export default function ReportsClient({ bookings }: ReportsClientProps) {
         revenueData.totalRevenue.toFixed(2),
         revenueData.totalCaptainCosts.toFixed(2),
         revenueData.totalSailorCosts.toFixed(2),
+        revenueData.totalFuelCosts.toFixed(2),
+        revenueData.totalPackageAddonCosts.toFixed(2),
         revenueData.totalCommissions.toFixed(2),
         revenueData.totalCosts.toFixed(2),
         revenueData.netProfit.toFixed(2),
@@ -856,6 +980,200 @@ export default function ReportsClient({ bookings }: ReportsClientProps) {
         </CardContent>
       </Card>
 
+      {/* Revenue by Booking Category */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Revenue by Booking Category</CardTitle>
+          <CardDescription>Revenue breakdown across commercial, internal use, and bare boat charters</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={revenueByBookingCategory}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+              <XAxis
+                dataKey="name"
+                stroke="#888"
+                style={{ fontSize: '12px' }}
+              />
+              <YAxis
+                stroke="#888"
+                style={{ fontSize: '12px' }}
+                tickFormatter={(value) => `€${value}`}
+              />
+              <Tooltip
+                formatter={(value) => `€${Number(value).toFixed(2)}`}
+                contentStyle={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                  border: '1px solid #ccc',
+                  borderRadius: '8px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                }}
+              />
+              <Legend />
+              <Bar dataKey="revenue" fill="#0088FE" name="Revenue" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+            {revenueByBookingCategory.map((cat, idx) => (
+              <div key={idx} className="p-3 border rounded-lg bg-muted/30">
+                <p className="text-sm font-medium text-muted-foreground">{cat.name}</p>
+                <p className="text-xl font-bold text-blue-600">€{cat.revenue.toFixed(2)}</p>
+                <p className="text-xs text-muted-foreground">{cat.count} bookings</p>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Fuel Cost Analysis */}
+      {fuelCostAnalysis.totalFuelCost > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Fuel Cost Summary</CardTitle>
+            <CardDescription>Analysis of fuel costs across bookings and boat types</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="p-4 border rounded-lg bg-orange-50 dark:bg-orange-950/20">
+                <p className="text-sm font-medium text-muted-foreground">Total Fuel Costs</p>
+                <p className="text-2xl font-bold text-orange-600">€{fuelCostAnalysis.totalFuelCost.toFixed(2)}</p>
+              </div>
+              <div className="p-4 border rounded-lg bg-orange-50 dark:bg-orange-950/20">
+                <p className="text-sm font-medium text-muted-foreground">Average per Booking</p>
+                <p className="text-2xl font-bold text-orange-600">€{fuelCostAnalysis.avgFuelPerBooking.toFixed(2)}</p>
+              </div>
+              <div className="p-4 border rounded-lg bg-orange-50 dark:bg-orange-950/20">
+                <p className="text-sm font-medium text-muted-foreground">Bookings with Fuel</p>
+                <p className="text-2xl font-bold text-orange-600">{fuelCostAnalysis.bookingsWithFuelCount}</p>
+              </div>
+            </div>
+
+            {fuelCostAnalysis.fuelByBoatType.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold mb-3">Fuel Costs by Boat Type</h4>
+                <div className="space-y-2">
+                  {fuelCostAnalysis.fuelByBoatType.map((boat, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex-1">
+                        <p className="font-medium">{boat.boatType}</p>
+                        <p className="text-sm text-muted-foreground">{boat.count} bookings</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-orange-600">€{boat.totalFuelCost.toFixed(2)}</p>
+                        <p className="text-sm text-muted-foreground">Avg: €{boat.avgFuelCost.toFixed(2)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Profitability by Category */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Profitability by Booking Category</CardTitle>
+          <CardDescription>Profit margins and net profit for each booking category</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {profitabilityByCategory.map((cat, idx) => (
+              <div key={idx} className="p-4 border rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-semibold text-lg">{cat.name}</h4>
+                  <span className="text-sm text-muted-foreground">{cat.count} bookings</span>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Revenue</p>
+                    <p className="text-lg font-bold">€{cat.revenue.toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Total Costs</p>
+                    <p className="text-lg font-bold text-red-600">€{cat.costs.toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Net Profit</p>
+                    <p className="text-lg font-bold text-green-600">€{cat.profit.toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Profit Margin</p>
+                    <p className="text-lg font-bold text-blue-600">{cat.margin.toFixed(1)}%</p>
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div
+                      className="bg-green-600 h-2 rounded-full transition-all"
+                      style={{ width: `${Math.max(0, Math.min(cat.margin, 100))}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Operational Costs Detail */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Operational Costs Detail</CardTitle>
+          <CardDescription>Detailed breakdown of all operational expenses</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {revenueData.totalCaptainCosts > 0 && (
+              <div className="p-4 border rounded-lg bg-red-50 dark:bg-red-950/20">
+                <p className="text-xs font-medium text-muted-foreground">Captain Costs</p>
+                <p className="text-xl font-bold text-red-600">€{revenueData.totalCaptainCosts.toFixed(2)}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {((revenueData.totalCaptainCosts / revenueData.totalCosts) * 100).toFixed(1)}% of costs
+                </p>
+              </div>
+            )}
+            {revenueData.totalSailorCosts > 0 && (
+              <div className="p-4 border rounded-lg bg-purple-50 dark:bg-purple-950/20">
+                <p className="text-xs font-medium text-muted-foreground">Sailor Costs</p>
+                <p className="text-xl font-bold text-purple-600">€{revenueData.totalSailorCosts.toFixed(2)}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {((revenueData.totalSailorCosts / revenueData.totalCosts) * 100).toFixed(1)}% of costs
+                </p>
+              </div>
+            )}
+            {revenueData.totalFuelCosts > 0 && (
+              <div className="p-4 border rounded-lg bg-orange-50 dark:bg-orange-950/20">
+                <p className="text-xs font-medium text-muted-foreground">Fuel Costs</p>
+                <p className="text-xl font-bold text-orange-600">€{revenueData.totalFuelCosts.toFixed(2)}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {((revenueData.totalFuelCosts / revenueData.totalCosts) * 100).toFixed(1)}% of costs
+                </p>
+              </div>
+            )}
+            {revenueData.totalPackageAddonCosts > 0 && (
+              <div className="p-4 border rounded-lg bg-purple-50 dark:bg-purple-950/20">
+                <p className="text-xs font-medium text-muted-foreground">Package Addon Costs</p>
+                <p className="text-xl font-bold text-purple-600">€{revenueData.totalPackageAddonCosts.toFixed(2)}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {((revenueData.totalPackageAddonCosts / revenueData.totalCosts) * 100).toFixed(1)}% of costs
+                </p>
+              </div>
+            )}
+            {revenueData.totalCommissions > 0 && (
+              <div className="p-4 border rounded-lg bg-teal-50 dark:bg-teal-950/20">
+                <p className="text-xs font-medium text-muted-foreground">Agent Commissions</p>
+                <p className="text-xl font-bold text-teal-600">€{revenueData.totalCommissions.toFixed(2)}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {((revenueData.totalCommissions / revenueData.totalCosts) * 100).toFixed(1)}% of costs
+                </p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Booking Status Breakdown */}
         <Card>
@@ -923,10 +1241,12 @@ export default function ReportsClient({ bookings }: ReportsClientProps) {
                   <th className="text-left py-2 px-2 font-semibold">Boat</th>
                   <th className="text-right py-2 px-2 font-semibold">Bookings</th>
                   <th className="text-right py-2 px-2 font-semibold">Revenue</th>
-                  <th className="text-right py-2 px-2 font-semibold">Captain</th>
-                  <th className="text-right py-2 px-2 font-semibold">Sailor</th>
-                  <th className="text-right py-2 px-2 font-semibold">Commission</th>
-                  <th className="text-right py-2 px-2 font-semibold">Net Profit</th>
+                  <th className="text-right py-2 px-2 font-semibold text-orange-600">Captain</th>
+                  <th className="text-right py-2 px-2 font-semibold text-purple-600">Sailor</th>
+                  <th className="text-right py-2 px-2 font-semibold text-orange-600">Fuel</th>
+                  <th className="text-right py-2 px-2 font-semibold text-purple-600">Addon</th>
+                  <th className="text-right py-2 px-2 font-semibold text-blue-600">Commission</th>
+                  <th className="text-right py-2 px-2 font-semibold text-green-600">Net Profit</th>
                 </tr>
               </thead>
               <tbody>
@@ -937,6 +1257,8 @@ export default function ReportsClient({ bookings }: ReportsClientProps) {
                     <td className="text-right py-2 px-2">€{boat.revenue.toFixed(2)}</td>
                     <td className="text-right py-2 px-2 text-orange-600">€{boat.captainCosts.toFixed(2)}</td>
                     <td className="text-right py-2 px-2 text-purple-600">€{boat.sailorCosts.toFixed(2)}</td>
+                    <td className="text-right py-2 px-2 text-orange-600">€{boat.fuelCosts.toFixed(2)}</td>
+                    <td className="text-right py-2 px-2 text-purple-600">€{boat.addonCosts.toFixed(2)}</td>
                     <td className="text-right py-2 px-2 text-blue-600">€{boat.commissions.toFixed(2)}</td>
                     <td className="text-right py-2 px-2 font-bold text-green-600">€{boat.netProfit.toFixed(2)}</td>
                   </tr>

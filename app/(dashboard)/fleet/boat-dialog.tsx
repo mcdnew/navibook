@@ -24,6 +24,7 @@ import {
 import { toast } from 'sonner'
 import { Loader2, User } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import BoatFuelConfig from '@/app/components/boats/boat-fuel-config'
 
 interface Captain {
   id: string
@@ -49,6 +50,7 @@ export default function BoatDialog({
   const [loading, setLoading] = useState(false)
   const [captains, setCaptains] = useState<Captain[]>([])
   const [loadingCaptains, setLoadingCaptains] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   // Form state
   const [name, setName] = useState('')
@@ -75,11 +77,14 @@ export default function BoatDialog({
 
       const { data: userData } = await supabase
         .from('users')
-        .select('company_id')
+        .select('company_id, role')
         .eq('id', user.id)
         .single()
 
       if (!userData) return
+
+      // Check if user is admin
+      setIsAdmin(userData.role === 'admin' || userData.role === 'manager' || userData.role === 'office_staff')
 
       const { data, error } = await supabase
         .from('users')
@@ -306,7 +311,18 @@ export default function BoatDialog({
             />
           </div>
 
-          <DialogFooter>
+          {/* Fuel Configuration - Only in edit mode for motorboat/jetski */}
+          {mode === 'edit' && boat && (
+            <BoatFuelConfig
+              boatId={boat.id}
+              boatType={boatType as 'sailboat' | 'motorboat' | 'jetski'}
+              boatName={name}
+              isAdmin={isAdmin}
+            />
+          )}
+        </form>
+
+        <DialogFooter>
             <Button
               type="button"
               variant="outline"
@@ -326,7 +342,6 @@ export default function BoatDialog({
               )}
             </Button>
           </DialogFooter>
-        </form>
       </DialogContent>
     </Dialog>
   )

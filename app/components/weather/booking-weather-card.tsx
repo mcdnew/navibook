@@ -44,22 +44,22 @@ export default function BookingWeatherCard({
     if (waveHeight > 2 || windKnots >= 19) {
       return {
         status: 'Not Recommended',
-        color: 'bg-red-50 border-red-200',
-        textColor: 'text-red-700',
+        color: 'bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800',
+        textColor: 'text-red-700 dark:text-red-200',
         icon: '⚠️',
       }
     } else if (waveHeight >= 2 || windKnots >= 13.5) {
       return {
         status: 'Caution Advised',
-        color: 'bg-yellow-50 border-yellow-200',
-        textColor: 'text-yellow-700',
+        color: 'bg-yellow-50 dark:bg-yellow-950 border-yellow-200 dark:border-yellow-800',
+        textColor: 'text-yellow-700 dark:text-yellow-200',
         icon: '⚡',
       }
     } else {
       return {
         status: 'Good Conditions',
-        color: 'bg-green-50 border-green-200',
-        textColor: 'text-green-700',
+        color: 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800',
+        textColor: 'text-green-700 dark:text-green-200',
         icon: '✓',
       }
     }
@@ -87,12 +87,12 @@ export default function BookingWeatherCard({
             <span className="text-sm">Loading weather data...</span>
           </div>
         ) : !weatherData ? (
-          <div className={`p-4 rounded-lg border-2 ${safetyInfo?.color || 'bg-gray-50 border-gray-200'}`}>
+          <div className={`p-4 rounded-lg border-2 ${safetyInfo?.color || 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}>
             <div className="flex gap-2">
-              <AlertCircle className="w-5 h-5 text-gray-600 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="w-5 h-5 text-slate-600 dark:text-slate-400 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-gray-700">Weather data not available yet</p>
-                <p className="text-xs text-gray-600 mt-1">
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Weather data not available yet</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
                   Weather forecasts are available for dates within the next 7 days. Check back closer to your booking date for more accurate data.
                 </p>
               </div>
@@ -115,23 +115,23 @@ export default function BookingWeatherCard({
             {/* Weather Details Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {/* Temperature */}
-              <div className="bg-slate-50 p-3 rounded-lg">
-                <p className="text-xs text-muted-foreground mb-1">Temperature</p>
-                <p className="text-lg font-semibold">
+              <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
+                <p className="text-xs text-slate-600 dark:text-slate-400 mb-1">Temperature</p>
+                <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                   {Math.round(weatherData.temperature)}°C
                 </p>
               </div>
 
               {/* Wind */}
-              <div className="bg-slate-50 p-3 rounded-lg">
-                <p className="text-xs text-muted-foreground mb-1">Wind</p>
+              <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
+                <p className="text-xs text-slate-600 dark:text-slate-400 mb-1">Wind</p>
                 <div className="flex items-center gap-1">
                   <span className="text-lg">{getWindDirectionEmoji(weatherData.windDirection)}</span>
                   <div>
-                    <p className="text-lg font-semibold">
+                    <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                       {kmhToKnots(weatherData.windSpeed).toFixed(1)}kts
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
                       {getWindDirection(weatherData.windDirection)}
                     </p>
                   </div>
@@ -139,17 +139,17 @@ export default function BookingWeatherCard({
               </div>
 
               {/* Waves */}
-              <div className="bg-slate-50 p-3 rounded-lg">
-                <p className="text-xs text-muted-foreground mb-1">Waves</p>
-                <p className="text-lg font-semibold">
+              <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
+                <p className="text-xs text-slate-600 dark:text-slate-400 mb-1">Waves</p>
+                <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                   {weatherData.waveHeight.toFixed(1)}m
                 </p>
               </div>
 
               {/* Rain Probability */}
-              <div className="bg-slate-50 p-3 rounded-lg">
-                <p className="text-xs text-muted-foreground mb-1">Rain</p>
-                <p className="text-lg font-semibold">
+              <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
+                <p className="text-xs text-slate-600 dark:text-slate-400 mb-1">Rain</p>
+                <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                   {weatherData.precipitationProbability}%
                 </p>
               </div>
@@ -157,7 +157,7 @@ export default function BookingWeatherCard({
 
             {/* Recommendation Message */}
             {safetyInfo && (
-              <div className="text-sm text-muted-foreground mt-2 p-3 bg-gray-50 rounded-lg">
+              <div className="text-sm mt-2 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
                 {safetyInfo.status === 'Good Conditions' && (
                   <p>🟢 Excellent conditions for boating. Proceed with confidence.</p>
                 )}

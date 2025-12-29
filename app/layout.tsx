@@ -52,7 +52,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="w-full bg-blue-50 border-b border-blue-100 text-[11px] md:text-sm text-blue-900">
+          <div className="w-full bg-blue-50 dark:bg-blue-950 border-b border-blue-100 dark:border-blue-900 text-[11px] md:text-sm text-blue-900 dark:text-blue-200">
             <div className="mx-auto max-w-7xl flex flex-wrap items-center justify-center gap-2 py-2 px-3">
               <span className="font-medium">Testing manuals:</span>
               <Link
@@ -61,7 +61,7 @@ export default function RootLayout({
               >
                 EN
               </Link>
-              <span className="text-blue-300">/</span>
+              <span className="text-blue-300 dark:text-blue-700">/</span>
               <Link
                 href="/test-manual-es"
                 className="underline-offset-2 hover:underline"

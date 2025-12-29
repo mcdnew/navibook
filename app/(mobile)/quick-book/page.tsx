@@ -659,17 +659,17 @@ export default function QuickBookPage() {
 
         {/* Success/Error Messages */}
         {error && (
-          <Card className="border-red-200 bg-red-50">
+          <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950">
             <CardContent className="pt-6">
-              <p className="text-sm text-red-600">{error}</p>
+              <p className="text-sm text-red-600 dark:text-red-200">{error}</p>
             </CardContent>
           </Card>
         )}
 
         {success && (
-          <Card className="border-green-200 bg-green-50">
+          <Card className="border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950">
             <CardContent className="pt-6">
-              <p className="text-sm text-green-600">{success}</p>
+              <p className="text-sm text-green-600 dark:text-green-200">{success}</p>
             </CardContent>
           </Card>
         )}
@@ -815,12 +815,12 @@ export default function QuickBookPage() {
                         }}
                         className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md min-h-[88px] ${
                           selectedBoat === boat.boat_id
-                            ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                            ? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-950 ring-2 ring-blue-200 dark:ring-blue-700'
                             : !meetsCapacity
-                            ? 'border-orange-200 bg-orange-50 hover:border-orange-300'
+                            ? 'border-orange-200 dark:border-orange-700 bg-orange-50 dark:bg-orange-950 hover:border-orange-300 dark:hover:border-orange-600'
                             : fieldErrors.boat
-                            ? 'border-red-200 hover:border-red-300'
-                            : 'border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                            ? 'border-red-200 dark:border-red-700 hover:border-red-300 dark:hover:border-red-600'
+                            : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600'
                         }`}
                         style={{ position: 'relative', zIndex: 1 }}
                       >
@@ -1058,7 +1058,7 @@ export default function QuickBookPage() {
 
           {/* Summary */}
           {selectedBoat && totalPrice > 0 && (
-            <Card className="border-blue-200 bg-blue-50">
+            <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950">
               <CardHeader>
                 <CardTitle>Booking Summary</CardTitle>
               </CardHeader>
@@ -1077,17 +1077,17 @@ export default function QuickBookPage() {
                   <span>Passengers:</span>
                   <span className="font-semibold">{passengers}</span>
                 </div>
-                <div className="flex justify-between text-lg font-bold border-t pt-2 mt-2">
+                <div className="flex justify-between text-lg font-bold border-t dark:border-blue-800 pt-2 mt-2">
                   <span>Total Price:</span>
-                  <span className="text-blue-600">€{totalPrice.toFixed(2)}</span>
+                  <span className="text-blue-600 dark:text-blue-300">€{totalPrice.toFixed(2)}</span>
                 </div>
                 {captainFee > 0 && (
-                  <div className="flex justify-between text-sm text-orange-600">
+                  <div className="flex justify-between text-sm text-orange-600 dark:text-orange-400">
                     <span>Captain Cost:</span>
                     <span className="font-semibold">€{captainFee.toFixed(2)}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-sm text-green-600">
+                <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
                   <span>Your Commission ({user?.commission_percentage}%):</span>
                   <span className="font-semibold">€{commission.toFixed(2)}</span>
                 </div>
@@ -1103,7 +1103,7 @@ export default function QuickBookPage() {
 
           {/* Booking Confirmation Option */}
           {selectedBoat && (
-            <Card className="bg-gradient-to-r from-purple-50 to-blue-50">
+            <Card className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950 dark:to-blue-950">
               <CardHeader>
                 <CardTitle className="text-base">Confirmation Option</CardTitle>
                 <CardDescription>Choose how to process this booking</CardDescription>
@@ -1139,8 +1139,8 @@ export default function QuickBookPage() {
                   onClick={() => setConfirmImmediately(true)}
                   className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
                     confirmImmediately
-                      ? 'border-green-500 bg-green-50 ring-2 ring-green-200'
-                      : 'border-gray-200 hover:bg-gray-50'
+                      ? 'border-green-500 dark:border-green-600 bg-green-50 dark:bg-green-950 ring-2 ring-green-200 dark:ring-green-700'
+                      : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -1200,30 +1200,30 @@ export default function QuickBookPage() {
             <div className="space-y-4 py-4">
               {/* Hold Timer (only show if not confirmed immediately) */}
               {!confirmImmediately && timeRemaining > 0 ? (
-                <Card className="border-orange-200 bg-orange-50">
+                <Card className="border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950">
                   <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Clock className="w-5 h-5 text-orange-600" />
-                        <span className="font-semibold text-orange-900">Time Remaining:</span>
+                        <Clock className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                        <span className="font-semibold text-orange-900 dark:text-orange-100">Time Remaining:</span>
                       </div>
-                      <span className="text-2xl font-bold text-orange-600">
+                      <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                         {formatTimeRemaining(timeRemaining)}
                       </span>
                     </div>
-                    <p className="text-xs text-orange-700 mt-2">
+                    <p className="text-xs text-orange-700 dark:text-orange-300 mt-2">
                       This booking will be automatically released if not confirmed within 15 minutes.
                     </p>
                   </CardContent>
                 </Card>
               ) : !confirmImmediately ? (
-                <Card className="border-red-200 bg-red-50">
+                <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950">
                   <CardContent className="pt-6">
                     <div className="flex items-center gap-2">
-                      <AlertCircle className="w-5 h-5 text-red-600" />
-                      <span className="font-semibold text-red-900">Hold Expired</span>
+                      <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+                      <span className="font-semibold text-red-900 dark:text-red-100">Hold Expired</span>
                     </div>
-                    <p className="text-sm text-red-700 mt-2">
+                    <p className="text-sm text-red-700 dark:text-red-300 mt-2">
                       The 15-minute hold has expired. Please create a new booking.
                     </p>
                   </CardContent>
@@ -1232,13 +1232,13 @@ export default function QuickBookPage() {
 
               {/* Confirmed Status */}
               {confirmImmediately && (
-                <Card className="border-green-200 bg-green-50">
+                <Card className="border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950">
                   <CardContent className="pt-6">
                     <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-6 h-6 text-green-600" />
-                      <span className="font-semibold text-green-900 text-lg">Booking Confirmed</span>
+                      <CheckCircle2 className="w-6 h-6 text-green-600 dark:text-green-400" />
+                      <span className="font-semibold text-green-900 dark:text-green-100 text-lg">Booking Confirmed</span>
                     </div>
-                    <p className="text-sm text-green-700 mt-2">
+                    <p className="text-sm text-green-700 dark:text-green-300 mt-2">
                       This booking has been confirmed and is now active.
                     </p>
                   </CardContent>

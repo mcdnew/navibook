@@ -22,6 +22,7 @@ import { CheckCircle2, Clock, AlertCircle } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 import BookingWeatherCard from '@/app/components/weather/booking-weather-card'
 import SailorSelect from '@/app/components/booking/sailor-select'
+import { calculateAllBookingCosts } from '@/lib/booking/cost-calculator'
 
 type Boat = {
   boat_id: string
@@ -512,6 +513,15 @@ export default function QuickBookPage() {
     try {
       const endTime = calculateEndTime(startTime, duration)
 
+      // Calculate fuel cost and package add-on cost
+      const bookingCosts = await calculateAllBookingCosts(
+        selectedBoat,
+        user.company_id,
+        duration,
+        packageType,
+        parseInt(passengers)
+      )
+
       // Prepare booking data
       const bookingData = {
         p_company_id: user.company_id,
@@ -532,7 +542,9 @@ export default function QuickBookPage() {
         p_notes: notes || null,
         p_booking_category: bookingCategory,
         p_discount_percentage: parseFloat(discountPercentage) || 0,
-        p_is_bare_boat: isBareBoat || bookingCategory === 'bare_boat'
+        p_is_bare_boat: isBareBoat || bookingCategory === 'bare_boat',
+        p_fuel_cost: bookingCosts.fuel_cost,
+        p_package_addon_cost: bookingCosts.package_addon_cost
       }
 
       // Validate boat ID is a valid UUID
@@ -568,6 +580,8 @@ export default function QuickBookPage() {
             booking_category: bookingCategory,
             discount_percentage: parseFloat(discountPercentage) || 0,
             is_bare_boat: isBareBoat || bookingCategory === 'bare_boat',
+            fuel_cost: bookingCosts.fuel_cost,
+            package_addon_cost: bookingCosts.package_addon_cost,
             status: 'confirmed',
             deposit_paid: parseFloat(depositAmount) > 0
           })

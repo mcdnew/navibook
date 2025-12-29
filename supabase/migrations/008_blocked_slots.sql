@@ -1,3 +1,14 @@
+-- Add new user roles if they don't exist
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_enum WHERE enumlabel = 'company_admin' AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'user_role')) THEN
+    ALTER TYPE user_role ADD VALUE 'company_admin';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_enum WHERE enumlabel = 'power_agent' AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'user_role')) THEN
+    ALTER TYPE user_role ADD VALUE 'power_agent';
+  END IF;
+END $$;
+
 -- Create blocked_slots table for maintenance and other unavailability reasons
 CREATE TABLE IF NOT EXISTS blocked_slots (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -20,13 +31,19 @@ CREATE TABLE IF NOT EXISTS blocked_slots (
 );
 
 -- Create indexes for performance
-CREATE INDEX idx_blocked_slots_company ON blocked_slots(company_id);
-CREATE INDEX idx_blocked_slots_boat ON blocked_slots(boat_id);
-CREATE INDEX idx_blocked_slots_date ON blocked_slots(blocked_date);
-CREATE INDEX idx_blocked_slots_date_range ON blocked_slots(blocked_date, start_time, end_time);
+CREATE INDEX IF NOT EXISTS idx_blocked_slots_company ON blocked_slots(company_id);
+CREATE INDEX IF NOT EXISTS idx_blocked_slots_boat ON blocked_slots(boat_id);
+CREATE INDEX IF NOT EXISTS idx_blocked_slots_date ON blocked_slots(blocked_date);
+CREATE INDEX IF NOT EXISTS idx_blocked_slots_date_range ON blocked_slots(blocked_date, start_time, end_time);
 
 -- Enable RLS
 ALTER TABLE blocked_slots ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can view company blocked slots" ON blocked_slots;
+DROP POLICY IF EXISTS "Admins and power agents can insert blocked slots" ON blocked_slots;
+DROP POLICY IF EXISTS "Admins and power agents can update blocked slots" ON blocked_slots;
+DROP POLICY IF EXISTS "Admins and power agents can delete blocked slots" ON blocked_slots;
 
 -- RLS Policies
 -- Users can view blocked slots for their company
@@ -197,6 +214,9 @@ BEGIN
   ORDER BY bs.blocked_date, bs.start_time;
 END;
 $$;
+
+-- Drop existing trigger if it exists
+DROP TRIGGER IF EXISTS blocked_slots_updated_at ON blocked_slots;
 
 -- Trigger to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_blocked_slots_updated_at()

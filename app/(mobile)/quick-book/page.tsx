@@ -114,6 +114,12 @@ export default function QuickBookPage() {
   const [fuelCost, setFuelCost] = useState<number>(0)
   const [packageAddonCost, setPackageAddonCost] = useState<number>(0)
 
+  // NEW: Cancellation policies and instructor tracking
+  const [cancellationPolicies, setCancellationPolicies] = useState<any[]>([])
+  const [selectedCancellationPolicy, setSelectedCancellationPolicy] = useState<string>('')
+  const [instructors, setInstructors] = useState<any[]>([])
+  const [selectedInstructor, setSelectedInstructor] = useState<string>('')
+
   // Check if user can create internal bookings (admin/manager/office_staff only)
   const canCreateInternalBookings = user?.role && ['admin', 'manager', 'office_staff'].includes(user.role)
 
@@ -157,6 +163,41 @@ export default function QuickBookPage() {
       setDiscountPercentage('0')
     }
   }, [bookingCategory])
+
+  // Load cancellation policies and instructors when user is loaded
+  useEffect(() => {
+    if (!user) return
+
+    async function loadPoliciesAndInstructors() {
+      const currentUser = user!
+      // Load cancellation policies
+      const { data: policies } = await supabase
+        .from('cancellation_policies')
+        .select('id, policy_name, refund_before_7_days, refund_before_3_days, refund_before_1_day')
+        .eq('company_id', currentUser.company_id)
+        .eq('is_active', true)
+
+      if (policies && policies.length > 0) {
+        setCancellationPolicies(policies)
+        // Set first policy as default
+        setSelectedCancellationPolicy(policies[0].id)
+      }
+
+      // Load instructors (captains with instructor role)
+      const { data: instructorList } = await supabase
+        .from('users')
+        .select('id, first_name, last_name, hourly_rate')
+        .eq('company_id', currentUser.company_id)
+        .in('role', ['captain', 'instructor'])
+        .eq('is_active', true)
+
+      if (instructorList) {
+        setInstructors(instructorList)
+      }
+    }
+
+    loadPoliciesAndInstructors()
+  }, [user])
 
   // Load user data
   useEffect(() => {
@@ -544,7 +585,9 @@ export default function QuickBookPage() {
         p_discount_percentage: parseFloat(discountPercentage) || 0,
         p_is_bare_boat: isBareBoat || bookingCategory === 'bare_boat',
         p_fuel_cost: bookingCosts.fuel_cost,
-        p_package_addon_cost: bookingCosts.package_addon_cost
+        p_package_addon_cost: bookingCosts.package_addon_cost,
+        p_cancellation_policy_id: selectedCancellationPolicy || null,
+        p_instructor_id: bookingCategory === 'sailing_school' && selectedInstructor ? selectedInstructor : null
       }
 
       // Validate boat ID is a valid UUID
@@ -582,6 +625,8 @@ export default function QuickBookPage() {
             is_bare_boat: isBareBoat || bookingCategory === 'bare_boat',
             fuel_cost: bookingCosts.fuel_cost,
             package_addon_cost: bookingCosts.package_addon_cost,
+            cancellation_policy_id: selectedCancellationPolicy || null,
+            instructor_id: bookingCategory === 'sailing_school' && selectedInstructor ? selectedInstructor : null,
             status: 'confirmed',
             deposit_paid: parseFloat(depositAmount) > 0
           })
@@ -836,6 +881,30 @@ export default function QuickBookPage() {
                   <p className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950 p-2 rounded">
                     Bare boat mode: Captain and crew selection disabled
                   </p>
+                )}
+
+                {/* Instructor selection for sailing school bookings */}
+                {bookingCategory === 'sailing_school' && (
+                  <div className="space-y-2 pt-2 border-t">
+                    <Label htmlFor="instructor">Instructor *</Label>
+                    <Select value={selectedInstructor} onValueChange={setSelectedInstructor}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select an instructor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {instructors.map((instructor) => (
+                          <SelectItem key={instructor.id} value={instructor.id}>
+                            {instructor.first_name} {instructor.last_name} (€{instructor.hourly_rate?.toFixed(2)}/h)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {instructors.length === 0 && (
+                      <p className="text-xs text-orange-600 dark:text-orange-400">
+                        No instructors available. Please add instructors first.
+                      </p>
+                    )}
+                  </div>
                 )}
               </CardContent>
             </Card>

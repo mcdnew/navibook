@@ -20,6 +20,8 @@ export async function POST(request: Request) {
       totalPrice,
       depositAmount,
       notes,
+      cancellationPolicyId,
+      instructorId,
     } = await request.json()
 
     if (!bookingId) {
@@ -141,6 +143,8 @@ export async function POST(request: Request) {
       notes: notes,
       fuel_cost: fuelCost,
       package_addon_cost: packageAddonCost,
+      cancellation_policy_id: cancellationPolicyId || null,
+      instructor_id: instructorId || null,
     }
 
     // Only update captain if user has permission

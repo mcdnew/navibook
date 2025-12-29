@@ -87,6 +87,20 @@ export default async function BookingDetailPage({
         first_name,
         last_name
       ),
+      instructor:users!bookings_instructor_id_fkey (
+        id,
+        first_name,
+        last_name,
+        hourly_rate
+      ),
+      cancellation_policies (
+        id,
+        policy_name,
+        refund_before_7_days,
+        refund_before_3_days,
+        refund_before_1_day,
+        description
+      ),
       payment_transactions (
         id,
         amount,
@@ -304,6 +318,16 @@ export default async function BookingDetailPage({
                     <label className="text-sm font-medium text-muted-foreground">Source</label>
                     <p className="text-lg font-semibold capitalize">{booking.source}</p>
                   </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Cancellation Policy</label>
+                    <p className="text-lg font-semibold">{booking.cancellation_policies?.policy_name || "Standard"}</p>
+                  </div>
+                  {booking.instructor && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Instructor</label>
+                      <p className="text-lg font-semibold">{booking.instructor.first_name} {booking.instructor.last_name}</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

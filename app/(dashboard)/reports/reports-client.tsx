@@ -62,6 +62,7 @@ type Booking = {
   boat_id: string
   agents: { first_name: string; last_name: string; commission_percentage: number }
   boats: { name: string; boat_type: string }
+  instructor_id?: string
   fuel_cost?: number
   package_addon_cost?: number
   booking_category?: string

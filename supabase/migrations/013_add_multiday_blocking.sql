@@ -147,7 +147,7 @@ BEGIN
   SELECT
     bs.id,
     bs.boat_id,
-    COALESCE(b.boat_name, 'All Boats'),
+    COALESCE(b.name, 'All Boats'),
     bs.start_date,
     bs.end_date,
     bs.start_time,
@@ -157,7 +157,7 @@ BEGIN
     CONCAT(u.first_name, ' ', u.last_name),
     bs.created_at
   FROM blocked_slots bs
-  LEFT JOIN boats b ON bs.boat_id = b.boat_id
+  LEFT JOIN boats b ON bs.boat_id = b.id
   LEFT JOIN users u ON bs.created_by = u.id
   WHERE
     bs.company_id = p_company_id

@@ -106,6 +106,16 @@ export default function QuickBookPage() {
   const [totalPrice, setTotalPrice] = useState<number>(0)
   const [commission, setCommission] = useState<number>(0)
 
+  // NEW: Booking category and internal booking options (admin/manager only)
+  const [bookingCategory, setBookingCategory] = useState<string>('commercial')
+  const [discountPercentage, setDiscountPercentage] = useState<string>('0')
+  const [isBareBoat, setIsBareBoat] = useState<boolean>(false)
+  const [fuelCost, setFuelCost] = useState<number>(0)
+  const [packageAddonCost, setPackageAddonCost] = useState<number>(0)
+
+  // Check if user can create internal bookings (admin/manager/office_staff only)
+  const canCreateInternalBookings = user?.role && ['admin', 'manager', 'office_staff'].includes(user.role)
+
   // UI state
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
@@ -130,6 +140,22 @@ export default function QuickBookPage() {
   // Weather data
   const [weatherData, setWeatherData] = useState<any>(null)
   const [loadingWeather, setLoadingWeather] = useState(false)
+
+  // Handle bare boat selection - disable captain/sailors
+  useEffect(() => {
+    if (isBareBoat || bookingCategory === 'bare_boat') {
+      setSelectedCaptain('none')
+      setSelectedSailors([])
+      setCaptainFee(0)
+    }
+  }, [isBareBoat, bookingCategory])
+
+  // Auto-clear discount when booking category changes back to commercial
+  useEffect(() => {
+    if (bookingCategory === 'commercial') {
+      setDiscountPercentage('0')
+    }
+  }, [bookingCategory])
 
   // Load user data
   useEffect(() => {
@@ -503,7 +529,10 @@ export default function QuickBookPage() {
         p_total_price: totalPrice,
         p_captain_fee: captainFee,
         p_deposit_amount: parseFloat(depositAmount) || 0,
-        p_notes: notes || null
+        p_notes: notes || null,
+        p_booking_category: bookingCategory,
+        p_discount_percentage: parseFloat(discountPercentage) || 0,
+        p_is_bare_boat: isBareBoat || bookingCategory === 'bare_boat'
       }
 
       // Validate boat ID is a valid UUID
@@ -536,6 +565,9 @@ export default function QuickBookPage() {
             captain_fee: captainFee,
             deposit_amount: parseFloat(depositAmount) || 0,
             notes: notes || null,
+            booking_category: bookingCategory,
+            discount_percentage: parseFloat(discountPercentage) || 0,
+            is_bare_boat: isBareBoat || bookingCategory === 'bare_boat',
             status: 'confirmed',
             deposit_paid: parseFloat(depositAmount) > 0
           })
@@ -740,6 +772,61 @@ export default function QuickBookPage() {
             </CardContent>
           </Card>
 
+          {/* Booking Type Selector - Admin/Manager/Office Staff Only */}
+          {canCreateInternalBookings && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Booking Type</CardTitle>
+                <CardDescription>Select the booking category</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Select value={bookingCategory} onValueChange={setBookingCategory}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="commercial">Commercial</SelectItem>
+                    <SelectItem value="club_activity">Club Activity</SelectItem>
+                    <SelectItem value="sailing_school">Sailing School</SelectItem>
+                    <SelectItem value="private_class">Private Class</SelectItem>
+                    <SelectItem value="maintenance">Maintenance</SelectItem>
+                    <SelectItem value="owner_use">Owner Use</SelectItem>
+                    <SelectItem value="bare_boat">Bare Boat</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Discount input for non-commercial bookings */}
+                {bookingCategory !== 'commercial' && (
+                  <div className="space-y-2 pt-2">
+                    <Label htmlFor="discount">Discount (%)</Label>
+                    <Input
+                      id="discount"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      value={discountPercentage}
+                      onChange={(e) => setDiscountPercentage(e.target.value)}
+                      placeholder="0"
+                    />
+                    {totalPrice > 0 && parseFloat(discountPercentage) > 0 && (
+                      <p className="text-xs text-orange-600 dark:text-orange-400">
+                        Warning: Revenue will be reduced by €{(totalPrice * parseFloat(discountPercentage) / 100).toFixed(2)} ({discountPercentage}%)
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Show note when bare boat is selected */}
+                {bookingCategory === 'bare_boat' && (
+                  <p className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950 p-2 rounded">
+                    Bare boat mode: Captain and crew selection disabled
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Weather Recommendation */}
           <BookingWeatherCard
             date={format(date, 'yyyy-MM-dd')}
@@ -887,7 +974,7 @@ export default function QuickBookPage() {
           </Card>
 
           {/* Captain Selection - Only for admin/manager/office_staff */}
-          {selectedBoat && captains.length > 0 && canAssignCrew && (
+          {selectedBoat && captains.length > 0 && canAssignCrew && !isBareBoat && bookingCategory !== 'bare_boat' && (
             <Card>
               <CardHeader>
                 <CardTitle>Captain</CardTitle>
@@ -920,7 +1007,7 @@ export default function QuickBookPage() {
           )}
 
           {/* Sailor Selection - Only for admin/manager/office_staff */}
-          {selectedBoat && canAssignCrew && (
+          {selectedBoat && canAssignCrew && !isBareBoat && bookingCategory !== 'bare_boat' && (
             <Card>
               <CardHeader>
                 <CardTitle>Sailors</CardTitle>
@@ -1081,10 +1168,34 @@ export default function QuickBookPage() {
                   <span>Total Price:</span>
                   <span className="text-blue-600 dark:text-blue-300">€{totalPrice.toFixed(2)}</span>
                 </div>
+                {fuelCost > 0 && (
+                  <div className="flex justify-between text-sm text-orange-600 dark:text-orange-400">
+                    <span>Fuel Cost:</span>
+                    <span className="font-semibold">€{fuelCost.toFixed(2)}</span>
+                  </div>
+                )}
+                {packageAddonCost > 0 && (
+                  <div className="flex justify-between text-sm text-purple-600 dark:text-purple-400">
+                    <span>Package Add-on Cost:</span>
+                    <span className="font-semibold">€{packageAddonCost.toFixed(2)}</span>
+                  </div>
+                )}
+                {(fuelCost > 0 || packageAddonCost > 0) && (
+                  <div className="flex justify-between text-sm font-semibold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 p-2 rounded">
+                    <span>Total Operational Costs:</span>
+                    <span>€{(fuelCost + packageAddonCost).toFixed(2)}</span>
+                  </div>
+                )}
                 {captainFee > 0 && (
                   <div className="flex justify-between text-sm text-orange-600 dark:text-orange-400">
                     <span>Captain Cost:</span>
                     <span className="font-semibold">€{captainFee.toFixed(2)}</span>
+                  </div>
+                )}
+                {canCreateInternalBookings && (fuelCost > 0 || packageAddonCost > 0 || captainFee > 0) && (
+                  <div className="flex justify-between text-sm font-semibold text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950 p-2 rounded border border-green-200 dark:border-green-800">
+                    <span>Net Profit (after costs):</span>
+                    <span>€{(totalPrice - fuelCost - packageAddonCost - captainFee).toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm text-green-600 dark:text-green-400">

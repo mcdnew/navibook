@@ -214,6 +214,7 @@ BEGIN
   v_is_available := check_boat_availability(
     p_boat_id,
     p_booking_date,
+    p_booking_date,
     p_start_time,
     v_end_time
   );

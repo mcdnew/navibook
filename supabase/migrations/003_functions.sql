@@ -192,7 +192,14 @@ CREATE OR REPLACE FUNCTION create_booking_with_hold(
   p_total_price DECIMAL(10,2) DEFAULT 0,
   p_captain_fee DECIMAL(10,2) DEFAULT 0,
   p_deposit_amount DECIMAL(10,2) DEFAULT 0,
-  p_notes TEXT DEFAULT NULL
+  p_notes TEXT DEFAULT NULL,
+  p_booking_category booking_category DEFAULT 'commercial',
+  p_discount_percentage DECIMAL(5,2) DEFAULT 0,
+  p_is_bare_boat BOOLEAN DEFAULT FALSE,
+  p_fuel_cost DECIMAL(10,2) DEFAULT 0,
+  p_package_addon_cost DECIMAL(10,2) DEFAULT 0,
+  p_cancellation_policy_id UUID DEFAULT NULL,
+  p_instructor_id UUID DEFAULT NULL
 )
 RETURNS UUID AS $$
 DECLARE
@@ -234,7 +241,15 @@ BEGIN
     captain_fee,
     deposit_amount,
     status,
-    hold_until
+    hold_until,
+    booking_category,
+    discount_percentage,
+    is_bare_boat,
+    fuel_cost,
+    package_addon_cost,
+    cancellation_policy_id,
+    instructor_id,
+    notes
   ) VALUES (
     p_company_id,
     p_boat_id,
@@ -253,7 +268,15 @@ BEGIN
     p_captain_fee,
     p_deposit_amount,
     'pending_hold',
-    NOW() + INTERVAL '15 minutes'
+    NOW() + INTERVAL '15 minutes',
+    p_booking_category,
+    p_discount_percentage,
+    p_is_bare_boat,
+    p_fuel_cost,
+    p_package_addon_cost,
+    p_cancellation_policy_id,
+    p_instructor_id,
+    p_notes
   ) RETURNING id INTO v_booking_id;
 
   RETURN v_booking_id;

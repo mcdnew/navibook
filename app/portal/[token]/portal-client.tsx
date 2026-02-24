@@ -270,7 +270,7 @@ export default function PortalClient({ token }: { token: string }) {
                     )}
                     <div className="flex justify-between">
                       <span className="text-gray-600">Duration:</span>
-                      <span className="font-medium">{booking.duration_hours} hours</span>
+                      <span className="font-medium">{booking.duration}</span>
                     </div>
                   </div>
                 </div>

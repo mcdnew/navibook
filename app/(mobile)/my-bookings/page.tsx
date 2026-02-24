@@ -36,14 +36,14 @@ export default async function MyBookingsPage() {
       .select(`
         id,
         booking_date,
-        booking_time,
-        duration_hours,
+        start_time,
+        duration,
         total_price,
         captain_fee,
         status,
         package_type,
         boats (name),
-        agents (first_name, last_name)
+        users!agent_id (first_name, last_name)
       `)
       .eq('captain_id', user.id)
       .order('booking_date', { ascending: true })
@@ -58,13 +58,13 @@ export default async function MyBookingsPage() {
         bookings (
           id,
           booking_date,
-          booking_time,
-          duration_hours,
+          start_time,
+          duration,
           total_price,
           status,
           package_type,
           boats (name),
-          agents (first_name, last_name)
+          users!agent_id (first_name, last_name)
         )
       `)
       .eq('sailor_id', user.id)
@@ -134,13 +134,13 @@ export default async function MyBookingsPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4 text-muted-foreground" />
-                        <span>{booking.booking_time} ({booking.duration_hours}h)</span>
+                        <span>{booking.start_time} ({booking.duration})</span>
                       </div>
                       {booking.agents && (
                         <div className="flex items-center gap-2">
                           <User className="w-4 h-4 text-muted-foreground" />
                           <span className="text-muted-foreground">
-                            Agent: {booking.agents.first_name} {booking.agents.last_name}
+                            Agent: {(booking as any).users?.first_name} {(booking as any).users?.last_name}
                           </span>
                         </div>
                       )}
@@ -189,7 +189,7 @@ export default async function MyBookingsPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4 text-muted-foreground" />
-                        <span>{booking.booking_time} ({booking.duration_hours}h)</span>
+                        <span>{booking.start_time} ({booking.duration})</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Euro className="w-4 h-4 text-muted-foreground" />

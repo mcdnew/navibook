@@ -40,6 +40,11 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single()
 
+  // Captains and sailors have their own dedicated view
+  if (userRecord?.role === 'captain' || userRecord?.role === 'sailor') {
+    redirect('/my-bookings')
+  }
+
   // Check if user is a captain
   const isCaptain = userRecord?.role === 'captain'
 

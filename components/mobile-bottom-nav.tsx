@@ -61,8 +61,8 @@ const navItems: NavItem[] = [
 export default function MobileBottomNav() {
   const pathname = usePathname()
 
-  // Don't show on login page or customer portal
-  if (pathname === '/' || pathname.startsWith('/portal/')) {
+  // Don't show on login page
+  if (pathname === '/') {
     return null
   }
 

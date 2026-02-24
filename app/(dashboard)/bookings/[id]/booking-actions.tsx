@@ -15,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
-import { CheckCircle2, XCircle, UserCheck, UserX, Loader2, Edit, Link2 } from 'lucide-react'
+import { CheckCircle2, XCircle, UserCheck, UserX, Loader2, Edit } from 'lucide-react'
 import EditBookingDialog from './edit-booking-dialog'
 
 interface BookingActionsProps {
@@ -178,54 +178,8 @@ export default function BookingActions({ booking, userRole }: BookingActionsProp
     }
   }
 
-  // Handle Generate Portal Link
-  const handleGeneratePortalLink = async () => {
-    if (!booking.customer_email) {
-      toast.error('No Customer Email', {
-        description: 'This booking does not have a customer email address.',
-      })
-      return
-    }
-
-    setLoading(true)
-    try {
-      const response = await fetch('/api/portal/generate-link', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          bookingId: booking.id,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to generate portal link')
-      }
-
-      // Copy link to clipboard
-      await navigator.clipboard.writeText(data.portalUrl)
-
-      toast.success('Portal Link Generated!', {
-        description: 'The customer portal link has been copied to your clipboard.',
-      })
-
-      // Optionally open the link in a new tab for preview
-      window.open(data.portalUrl, '_blank')
-    } catch (error: any) {
-      toast.error('Link Generation Failed', {
-        description: error.message,
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Portal link is always available if booking has customer email
-  const canGeneratePortalLink = !!booking.customer_email
-
   // Don't show action bar if no actions available
-  if (!canConfirm && !canComplete && !canMarkNoShow && !canCancel && !canEdit && !canGeneratePortalLink) {
+  if (!canConfirm && !canComplete && !canMarkNoShow && !canCancel && !canEdit) {
     return null
   }
 
@@ -281,22 +235,6 @@ export default function BookingActions({ booking, userRole }: BookingActionsProp
             >
               <Edit className="w-4 h-4 mr-2" />
               Edit Booking
-            </Button>
-          )}
-
-          {canGeneratePortalLink && (
-            <Button
-              onClick={handleGeneratePortalLink}
-              disabled={loading}
-              variant="outline"
-              className="border-purple-500 text-purple-600 dark:text-purple-400"
-            >
-              {loading ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Link2 className="w-4 h-4 mr-2" />
-              )}
-              Customer Portal Link
             </Button>
           )}
 

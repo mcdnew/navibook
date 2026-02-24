@@ -1037,3 +1037,121 @@ R: Chrome, Firefox, Safari, Edge (versiones recientes). Móvil: Safari (iOS), Ch
 **Manual NaviBook Day-Charter**
 **Versión 1.0 | Diciembre 2025**
 **Para más información, visita: https://navibook.com**
+
+---
+
+# ENTORNO DE DEMOSTRACIÓN — Happy Sail Estepona
+
+> Esta sección contiene credenciales e instrucciones de prueba para el entorno de demostración en vivo.
+> **Todas las cuentas usan la misma contraseña: `Demo1234!`**
+
+## Empresa de Demostración
+
+| Campo | Valor |
+|-------|-------|
+| **Empresa** | Happy Sail Estepona |
+| **Ubicación** | Puerto Deportivo de Estepona, Costa del Sol, España |
+| **Coordenadas (clima)** | 36.4240°N, 5.1473°W |
+
+## Credenciales de Acceso
+
+| Email | Rol | Nivel de Acceso |
+|-------|-----|-----------------|
+| `admin@navibook.com` | Super Admin | Todo (nivel sistema) |
+| `admin@happysail.es` | Administrador | Control total de empresa |
+| `ops@happysail.es` | Gerente de Operaciones | Reservas, personal, reportes, pagos |
+| `agent.marco@happysail.es` | Agente de Ventas (15% comisión) | Sus reservas, clientes |
+| `agent.laura@happysail.es` | Agente de Ventas (12% comisión) | Sus reservas, clientes |
+| `captain.javier@happysail.es` | Capitán | Mis Reservas (charters asignados) |
+| `captain.diego@happysail.es` | Capitán | Mis Reservas (charters asignados) |
+| `sailor.miguel@happysail.es` | Marinero | Mis Reservas (charters asignados) |
+
+## Flota de Demostración
+
+| Embarcación | Tipo | Capacidad | Capitán | Coste de Combustible |
+|-------------|------|-----------|---------|----------------------|
+| **Rayo del Sol** | RIB / Lancha | 6 pax | Opcional | €81/h |
+| **Brisa del Sur** | Velero | 8 pax | Javier (obligatorio) | €7,20/h |
+| **Bahía de Oro** | Yate a Motor | 10 pax | Diego (obligatorio) | €99/h |
+
+## Tipos de Remuneración del Personal
+
+| Persona | Tipo de Pago | Tarifa |
+|---------|-------------|--------|
+| Javier Ruiz (Capitán) | Tarifa diaria fija | **€120 / reserva** |
+| Diego Santos (Capitán) | Por hora | **€25 / hora** |
+| Miguel Torres (Marinero) | Por hora | **€15 / hora** |
+
+## Paquetes y Costes de Servicios
+
+| Paquete | Incluye | Coste (operador) |
+|---------|---------|------------------|
+| `charter_only` | Barco + tripulación | — |
+| `charter_drinks` | + Refrescos, agua, cerveza, sangría | €12 / persona |
+| `charter_food` | + Tapas, bocadillos, catering | €22 / persona |
+| `charter_full` | + Bebidas y Comida | €34 / persona |
+
+## Resumen de Datos de Demostración
+
+**Período:** Noviembre 2025 → 17 de Marzo 2026
+
+| Estado | Cantidad |
+|--------|----------|
+| Completadas | 30 |
+| Confirmadas (futuras) | 18 |
+| Canceladas | 4 |
+| No presentación | 2 |
+| Reserva en espera | 1 |
+| **Total reservas** | **55** |
+
+**Resumen financiero (sin cancelaciones):** Ingresos €29.798 · Coste capitanes €4.785 · Coste marineros €840 · Combustible €12.667 · 77 transacciones de pago
+
+## Escenarios de Prueba Clave
+
+### Escenario 1 — Nueva Reserva (vista de agente)
+Iniciar sesión como `agent.marco@happysail.es` → **Reserva Rápida** → seleccionar Bahía de Oro, 4h, charter_full, Diego como capitán → el precio se carga automáticamente → enviar → se activa la retención de 15 minutos.
+
+### Escenario 2 — Vista Móvil del Capitán
+Iniciar sesión como `captain.javier@happysail.es` → redirige automáticamente a **Mis Reservas** → muestra los charters del velero asignados con horarios, pasajeros y ganancias de €120 fijos por viaje.
+
+### Escenario 3 — Portal del Cliente VIP
+Abrir una reserva de Elena Vásquez → generar enlace del portal → la cliente ve la reserva, solicita cambio de fecha/paquete → el administrador recibe notificación por email.
+
+### Escenario 4 — Análisis de Costes
+Admin → **Reportes** → filtrar por barco:
+- Bahía de Oro: Diego (€25/h = €100 para 4h) + Miguel si asignado (€60 para 4h) + combustible (€99/h = €396 para 4h)
+- Brisa del Sur: Javier tarifa fija €120 + combustible mínimo (€29 para 4h)
+- Muestra qué viajes son más rentables después de deducir tripulación y combustible
+
+### Escenario 5 — Calendario y Slots Bloqueados
+**Calendario** → Rayo del Sol bloqueado el 19 de marzo (mantenimiento anual) → prevención de conflictos visible.
+
+### Escenario 6 — Lista de Espera
+**Lista de Espera** → Oliver Schmidt quiere Bahía de Oro todo el día para evento corporativo · Camille Moreau — despedida de soltera en velero, ya contactada.
+
+### Escenario 7 — Comisiones de Agentes
+**Agentes** → Marco 15%: en reserva de €840 = €126 · Laura 12%: en €840 = €100,80. La comisión se calcula automáticamente en cada reserva.
+
+## Clientes Destacados
+
+| Cliente | Reservas | Historia |
+|---------|----------|----------|
+| Elena Vásquez | 4 | VIP — champán al llegar, especial San Valentín, notas guardadas |
+| Marco & Giulia Bianchi | 3 | Pareja italiana, viajes de aniversario, prefieren yate a motor |
+| James Mitchell | 2 | Turista de Londres, visitas en Navidad y febrero |
+| Sophie Andersen | 3 | Danesa, siempre Brisa del Sur, paquete de bebidas |
+| Michael O'Brien | 1 cancelada + 1 futura | Canceló en diciembre por viento de levante, reservó de nuevo para el 10 de marzo |
+
+## Restablecer los Datos de Demostración
+
+```bash
+node scripts/seed-demo-data.js
+```
+
+Restablece todos los datos de demostración preservando la cuenta `admin@navibook.com`.
+
+---
+
+**Manual NaviBook Day-Charter**
+**Versión 1.0 | Diciembre 2025**
+**Para más información, visita: https://navibook.com**

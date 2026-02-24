@@ -1037,3 +1037,121 @@ A: Chrome, Firefox, Safari, Edge (latest versions). Mobile: Safari (iOS), Chrome
 **NaviBook Day-Charter Manual**
 **Version 1.0 | December 2025**
 **For more information, visit: https://navibook.com**
+
+---
+
+# DEMO ENVIRONMENT — Happy Sail Estepona
+
+> This section contains credentials and testing instructions for the live demo environment.
+> **All accounts use the same password: `Demo1234!`**
+
+## Demo Company
+
+| Field | Value |
+|-------|-------|
+| **Company** | Happy Sail Estepona |
+| **Location** | Puerto Deportivo de Estepona, Costa del Sol, Spain |
+| **Weather coordinates** | 36.4240°N, 5.1473°W |
+
+## Login Credentials
+
+| Email | Role | Access Level |
+|-------|------|--------------|
+| `admin@navibook.com` | Super Admin | Everything (system-level) |
+| `admin@happysail.es` | Admin | Full company control |
+| `ops@happysail.es` | Operations Manager | Bookings, crew, reports, payments |
+| `agent.marco@happysail.es` | Sales Agent (15% commission) | Own bookings, customers |
+| `agent.laura@happysail.es` | Sales Agent (12% commission) | Own bookings, customers |
+| `captain.javier@happysail.es` | Captain | My Bookings (assigned charters) |
+| `captain.diego@happysail.es` | Captain | My Bookings (assigned charters) |
+| `sailor.miguel@happysail.es` | Sailor | My Bookings (assigned charters) |
+
+## Demo Fleet
+
+| Boat | Type | Capacity | Captain | Fuel Cost |
+|------|------|----------|---------|-----------|
+| **Rayo del Sol** | RIB / Speedboat | 6 pax | Optional | €81/h |
+| **Brisa del Sur** | Sailboat | 8 pax | Javier (required) | €7.20/h |
+| **Bahía de Oro** | Motor Yacht | 10 pax | Diego (required) | €99/h |
+
+## Personnel Cost Arrangements
+
+| Person | Pay Type | Rate |
+|--------|----------|------|
+| Javier Ruiz (Captain) | Per-day flat rate | **€120 / booking** |
+| Diego Santos (Captain) | Per-hour | **€25 / hour** |
+| Miguel Torres (Sailor) | Per-hour | **€15 / hour** |
+
+## Packages & Amenity Costs
+
+| Package | Included | Operator Cost |
+|---------|----------|---------------|
+| `charter_only` | Boat + crew | — |
+| `charter_drinks` | + Soft drinks, water, beer, sangria | €12 / person |
+| `charter_food` | + Tapas, bocadillos, catering | €22 / person |
+| `charter_full` | + Drinks & Food | €34 / person |
+
+## Demo Data Snapshot
+
+**Date range:** November 2025 → March 17, 2026
+
+| Status | Count |
+|--------|-------|
+| Completed | 30 |
+| Confirmed (upcoming) | 18 |
+| Cancelled | 4 |
+| No-show | 2 |
+| Pending hold | 1 |
+| **Total bookings** | **55** |
+
+**Financials (non-cancelled):** Revenue €29,798 · Captain costs €4,785 · Sailor costs €840 · Fuel €12,667 · 77 payment transactions
+
+## Key Demo Scenarios
+
+### Scenario 1 — New Booking (Agent view)
+Login as `agent.marco@happysail.es` → **Quick Book** → select Bahía de Oro, 4h, charter_full, Diego as captain → price auto-loads → submit → 15-min hold activates.
+
+### Scenario 2 — Captain's Mobile View
+Login as `captain.javier@happysail.es` → auto-redirects to **My Bookings** → shows upcoming sailboat assignments with times, passengers, and €120 flat earnings per trip.
+
+### Scenario 3 — VIP Customer Portal
+Open an Elena Vásquez booking → generate portal link → customer views booking, requests date/package change → admin receives email notification.
+
+### Scenario 4 — Cost Analytics
+Admin → **Reports** → filter by boat:
+- Bahía de Oro: Diego (€25/h = €100 for 4h) + Miguel when assigned (€60 for 4h) + fuel (€99/h = €396 for 4h)
+- Brisa del Sur: Javier flat €120 + negligible fuel (€29 for 4h)
+- Shows which trips are most profitable after deducting crew and fuel
+
+### Scenario 5 — Calendar & Blocked Slots
+**Calendar** → Rayo del Sol blocked March 19 (annual maintenance) → visible conflict prevention.
+
+### Scenario 6 — Waitlist
+**Waitlist** → Oliver Schmidt wants full-day Bahía de Oro for corporate event · Camille Moreau — bachelorette sailing party, already contacted.
+
+### Scenario 7 — Agent Commissions
+**Agents** → Marco 15%: on €840 booking = €126 · Laura 12%: on €840 = €100.80. Commission auto-calculated on each booking.
+
+## Notable Customers
+
+| Customer | Bookings | Story |
+|----------|----------|-------|
+| Elena Vásquez | 4 | VIP — champagne on arrival, Valentine's Day special, customer notes saved |
+| Marco & Giulia Bianchi | 3 | Italian couple, anniversary trips, motor yacht only |
+| James Mitchell | 2 | London tourist, Christmas + February visits |
+| Sophie Andersen | 3 | Danish, always Brisa del Sur, drinks package |
+| Michael O'Brien | 1 cancelled + 1 upcoming | Cancelled Dec due to Levante wind warning, rebooked Mar 10 full-day |
+
+## Resetting Demo Data
+
+```bash
+node scripts/seed-demo-data.js
+```
+
+Resets all demo data while preserving the `admin@navibook.com` account.
+
+---
+
+**NaviBook Day-Charter Manual**
+**Version 1.0 | December 2025**
+**For more information, visit: https://navibook.com**

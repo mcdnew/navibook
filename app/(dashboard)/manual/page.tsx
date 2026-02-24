@@ -4,21 +4,21 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { MarkdownViewer } from "@/components/markdown-viewer"
 
-function getManualContentEs() {
+function getManualContent() {
   try {
-    const filePath = path.join(process.cwd(), "docs", "navibook_manual_es.md")
+    const filePath = path.join(process.cwd(), "docs", "navibook_manual_en.md")
     return fs.readFileSync(filePath, "utf8")
   } catch {
-    return "# Manual No Encontrado\n\nAsegúrate de que docs/navibook_manual_es.md existe dentro del proyecto."
+    return "# Manual Not Found\n\nMake sure docs/navibook_manual_en.md exists inside the project."
   }
 }
 
 export const metadata = {
-  title: "Manual del Usuario NaviBook - Guía Completa e Inicio Rápido (ES)",
+  title: "NaviBook User Manual - Complete Guide & Quick Start (EN)",
 }
 
-export default function TestManualEsPage() {
-  const content = getManualContentEs()
+export default function ManualEnPage() {
+  const content = getManualContent()
 
   return (
     <main className="min-h-screen bg-background p-4 md:p-8">
@@ -26,14 +26,14 @@ export default function TestManualEsPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-4 -mx-4 px-4 md:px-8 -mx-8 md:-mx-8 z-40">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold">Manual del Usuario NaviBook</h1>
+            <h1 className="text-3xl md:text-4xl font-bold">NaviBook User Manual</h1>
             <p className="text-muted-foreground text-sm mt-2">
-              Documentación completa • Versión en Español
+              Complete documentation • English Version
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline" size="sm">
-              <Link href="/test-manual-en">📖 English</Link>
+              <Link href="/manual-es">📖 En Español</Link>
             </Button>
             <Button asChild size="sm">
               <Link href="/dashboard">← Dashboard</Link>
@@ -48,7 +48,7 @@ export default function TestManualEsPage() {
 
         {/* Footer */}
         <div className="mt-8 text-center text-sm text-muted-foreground">
-          <p>NaviBook Day-Charter • Versión 1.0 • Diciembre 2025</p>
+          <p>NaviBook Day-Charter • Version 1.0 • December 2025</p>
         </div>
       </div>
     </main>

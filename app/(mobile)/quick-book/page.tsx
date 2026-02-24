@@ -279,18 +279,15 @@ export default function QuickBookPage() {
           setError('Failed to check availability')
           setAvailableBoats([])
         } else {
-          console.log('Available boats loaded:', data)
           setAvailableBoats(data || [])
 
           // Reset boat selection if previously selected boat is no longer available
           if (selectedBoat && !data?.some((b: Boat) => b.boat_id === selectedBoat)) {
-            console.log('Previously selected boat no longer available, clearing selection')
             setSelectedBoat('')
           }
 
           // Load pricing for available boats
           const boatIds = (data || []).map((b: Boat) => b.boat_id)
-          console.log('Loading pricing for boat IDs:', boatIds)
 
           if (boatIds.length > 0) {
             const { data: pricingData } = await supabase
@@ -299,7 +296,6 @@ export default function QuickBookPage() {
               .in('boat_id', boatIds)
               .eq('duration', duration)
 
-            console.log('Pricing data loaded:', pricingData)
             setPricing(pricingData || [])
           }
         }
@@ -438,8 +434,6 @@ export default function QuickBookPage() {
           filter: `company_id=eq.${user.company_id}`
         },
         (payload) => {
-          console.log('Booking change detected:', payload)
-
           // Show toast notification for new bookings from other agents
           if (payload.eventType === 'INSERT' && payload.new.agent_id !== user.id) {
             const newBooking = payload.new as any
@@ -957,20 +951,13 @@ export default function QuickBookPage() {
                     const meetsCapacity = boat.capacity >= passengersNum
                     const isRecommended = boat.capacity >= passengersNum && boat.capacity <= passengersNum + 2
 
-                    console.log('Rendering boat:', boat.boat_id, boat.boat_name, 'Selected:', selectedBoat, 'Capacity:', boat.capacity, 'Passengers:', passengersNum)
-
                     return (
                       <div
                         key={boat.boat_id}
                         onClick={(e) => {
                           e.preventDefault()
                           e.stopPropagation()
-                          console.log('🔵 DIV CLICKED:', boat.boat_name, boat.boat_id)
-                          console.log('🔵 Current selectedBoat:', selectedBoat)
-                          console.log('🔵 Same boat?', selectedBoat === boat.boat_id)
-                          console.log('🔵 Setting selectedBoat to:', boat.boat_id)
                           setSelectedBoat(boat.boat_id)
-                          console.log('🔵 State update called')
                           // Clear error when user selects a boat
                           if (fieldErrors.boat) {
                             setFieldErrors(prev => ({ ...prev, boat: undefined }))

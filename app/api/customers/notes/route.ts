@@ -3,6 +3,49 @@ import { NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const emails = searchParams.get('emails')?.split(',').filter(Boolean) || []
+
+    if (emails.length === 0) {
+      return NextResponse.json({ notes: [] })
+    }
+
+    const supabase = await createClient()
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { data: userRecord } = await supabase
+      .from('users')
+      .select('company_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!userRecord) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    const { data: notes, error } = await supabase
+      .from('customer_notes')
+      .select('customer_email, notes, preferences')
+      .eq('company_id', userRecord.company_id)
+      .in('customer_email', emails)
+
+    if (error) {
+      console.error('Fetch customer notes error:', error)
+      return NextResponse.json({ error: 'Failed to fetch notes' }, { status: 500 })
+    }
+
+    return NextResponse.json({ notes: notes || [] })
+  } catch (error: any) {
+    console.error('Get customer notes API error:', error)
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
+  }
+}
 
 export async function POST(request: Request) {
   try {
@@ -36,46 +79,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // For now, we'll store notes in a simple format
-    // In production, you'd want a dedicated customer_notes table
-    //
-    // CREATE TABLE customer_notes (
-    //   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    //   company_id UUID REFERENCES companies(id),
-    //   customer_email TEXT NOT NULL,
-    //   notes TEXT,
-    //   preferences TEXT,
-    //   created_at TIMESTAMPTZ DEFAULT NOW(),
-    //   updated_at TIMESTAMPTZ DEFAULT NOW()
-    // );
-    //
-    // For now, we'll just return success
-    // The notes would need to be stored and retrieved from the database
+    const { error: upsertError } = await supabase
+      .from('customer_notes')
+      .upsert({
+        company_id: userRecord.company_id,
+        customer_email: customerEmail,
+        notes,
+        preferences,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'company_id,customer_email',
+      })
 
-    console.log('Customer notes to be saved:', {
-      customerEmail,
-      notes,
-      preferences,
-      company_id: userRecord.company_id,
-    })
+    if (upsertError) {
+      console.error('Save customer notes error:', upsertError)
+      return NextResponse.json({ error: 'Failed to save notes' }, { status: 500 })
+    }
 
-    // TODO: Implement actual database storage
-    // const { data, error } = await supabase
-    //   .from('customer_notes')
-    //   .upsert({
-    //     company_id: userRecord.company_id,
-    //     customer_email: customerEmail,
-    //     notes,
-    //     preferences,
-    //     updated_at: new Date().toISOString(),
-    //   })
-    //   .select()
-    //   .single()
-
-    return NextResponse.json({
-      success: true,
-      message: 'Notes saved successfully (note: database table customer_notes needs to be created for persistence)',
-    })
+    return NextResponse.json({ success: true, message: 'Notes saved successfully' })
   } catch (error: any) {
     console.error('Save customer notes API error:', error)
     return NextResponse.json(

@@ -54,16 +54,16 @@ export default function RootLayout({
         >
           <div className="w-full bg-blue-50 dark:bg-blue-950 border-b border-blue-100 dark:border-blue-900 text-[11px] md:text-sm text-blue-900 dark:text-blue-200">
             <div className="mx-auto max-w-7xl flex flex-wrap items-center justify-center gap-2 py-2 px-3">
-              <span className="font-medium">Testing manuals:</span>
+              <span className="font-medium">User Manual:</span>
               <Link
-                href="/test-manual-en"
+                href="/manual"
                 className="underline-offset-2 hover:underline"
               >
                 EN
               </Link>
               <span className="text-blue-300 dark:text-blue-700">/</span>
               <Link
-                href="/test-manual-es"
+                href="/manual-es"
                 className="underline-offset-2 hover:underline"
               >
                 ES

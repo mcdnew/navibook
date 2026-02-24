@@ -103,22 +103,12 @@ export default function SailorSelect({
       },
     ]
 
-    console.log('🤖 DEBUG: Adding sailor to SailorSelect', {
-      sailor: sailor.first_name,
-      newLength: newSailors.length,
-      newSailors,
-    })
-
     onSailorsChange(newSailors)
   }
 
   // Remove a sailor
   const handleRemoveSailor = (sailorId: string) => {
     const filtered = selectedSailors.filter(s => s.sailorId !== sailorId)
-    console.log('🤖 DEBUG: Removing sailor from SailorSelect', {
-      sailorId,
-      newLength: filtered.length,
-    })
     onSailorsChange(filtered)
   }
 

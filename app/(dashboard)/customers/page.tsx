@@ -75,8 +75,26 @@ export default async function CustomersPage() {
   // Convert map to array and sort by total spent
   const customers = Array.from(customerMap.values()).sort((a, b) => b.totalSpent - a.totalSpent)
 
-  // TODO: Fetch customer notes from a customer_notes table
-  // For now, we'll handle this in the API endpoint
+  // Fetch customer notes for all customers
+  const customerEmails = customers.map(c => c.email).filter(Boolean)
+  if (customerEmails.length > 0) {
+    const { data: notesData } = await supabase
+      .from('customer_notes')
+      .select('customer_email, notes, preferences')
+      .eq('company_id', userRecord.company_id)
+      .in('customer_email', customerEmails)
+
+    if (notesData) {
+      const notesMap = new Map(notesData.map(n => [n.customer_email, n]))
+      customers.forEach(customer => {
+        const customerNote = notesMap.get(customer.email)
+        if (customerNote) {
+          customer.notes = customerNote.notes || ''
+          customer.preferences = customerNote.preferences || ''
+        }
+      })
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-8">

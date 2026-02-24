@@ -235,12 +235,6 @@ export default function EditBookingDialog({
       // Update sailors if user has permission
       const currentUserRole = currentUserRecord?.role || ''
       const canAssignCrew = ['admin', 'operations_manager', 'office_staff'].includes(currentUserRole)
-      console.log('🤖 DEBUG: Sailor save check', {
-        currentUserRole,
-        canAssignCrew,
-        originalSailorsLength: originalSailors.length,
-        selectedSailorsLength: selectedSailors.length,
-      })
 
       if (canAssignCrew) {
         // Check if sailors changed
@@ -250,18 +244,7 @@ export default function EditBookingDialog({
             selectedSailors.some(s => s.sailorId === os.sailorId)
           )
 
-        console.log('🤖 DEBUG: Sailors changed?', {
-          sailorsChanged,
-          originalLength: originalSailors.length,
-          selectedLength: selectedSailors.length,
-        })
-
         if (sailorsChanged) {
-          console.log('🤖 DEBUG: Calling sailor API with', {
-            bookingId: booking.id,
-            sailors: selectedSailors,
-          })
-
           // Update sailor assignments via API
           // Note: POST endpoint deletes existing sailors and inserts new ones
           const sailorResponse = await fetch('/api/bookings/sailors', {
@@ -274,18 +257,12 @@ export default function EditBookingDialog({
           })
 
           const sailorData = await sailorResponse.json()
-          console.log('🤖 DEBUG: Sailor API response', {
-            ok: sailorResponse.ok,
-            status: sailorResponse.status,
-            data: sailorData,
-          })
 
           if (!sailorResponse.ok) {
             throw new Error(sailorData.error || 'Failed to update sailors')
           }
 
           // Log sailor changes in booking history
-          console.log('🤖 DEBUG: Logging sailor history')
           const historyResponse = await fetch('/api/bookings/sailors/history', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -296,22 +273,11 @@ export default function EditBookingDialog({
             }),
           })
 
-          const historyData = await historyResponse.json()
-          console.log('🤖 DEBUG: History API response', {
-            ok: historyResponse.ok,
-            status: historyResponse.status,
-            data: historyData,
-          })
-
           // Don't fail the whole update if history logging fails
           if (!historyResponse.ok) {
             console.error('Failed to log sailor history')
           }
-        } else {
-          console.log('🤖 DEBUG: No sailor changes detected, skipping sailor update')
         }
-      } else {
-        console.log('🤖 DEBUG: User does not have permission to assign sailors', { userRole })
       }
 
       toast.success('Booking Updated!', {

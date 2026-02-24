@@ -15,8 +15,6 @@ CREATE EXTENSION IF NOT EXISTS "btree_gist";
 CREATE TYPE boat_type AS ENUM ('sailboat', 'motorboat', 'jetski');
 CREATE TYPE booking_category AS ENUM ('commercial', 'club_activity', 'sailing_school', 'private_class', 'maintenance', 'owner_use', 'bare_boat');
 CREATE TYPE booking_status AS ENUM ('pending_hold', 'confirmed', 'completed', 'cancelled', 'no_show');
-CREATE TYPE change_request_status AS ENUM ('pending', 'approved', 'rejected', 'completed');
-CREATE TYPE change_request_type AS ENUM ('date_change', 'time_change', 'package_change', 'participant_count', 'cancellation', 'other');
 CREATE TYPE duration_type AS ENUM ('2h', '3h', '4h', '8h');
 CREATE TYPE notification_channel AS ENUM ('email', 'sms', 'in_app');
 CREATE TYPE notification_status AS ENUM ('pending', 'sent', 'failed', 'delivered', 'bounced');
@@ -253,17 +251,13 @@ CREATE TABLE IF NOT EXISTS company_package_config (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- TABLE: customer_change_requests
-CREATE TABLE IF NOT EXISTS customer_change_requests (
   id UUID NOT NULL DEFAULT uuid_generate_v4(),
   booking_id UUID NOT NULL,
   company_id UUID NOT NULL,
-  request_type change_request_type NOT NULL,
   current_value TEXT,
   requested_value TEXT,
   customer_message TEXT,
   admin_response TEXT,
-  status change_request_status DEFAULT 'pending'::change_request_status,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now(),
   processed_by UUID,
@@ -294,8 +288,6 @@ CREATE TABLE IF NOT EXISTS customer_notification_preferences (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- TABLE: customer_portal_tokens
-CREATE TABLE IF NOT EXISTS customer_portal_tokens (
   id UUID NOT NULL DEFAULT uuid_generate_v4(),
   booking_id UUID NOT NULL,
   company_id UUID NOT NULL,
@@ -556,13 +548,10 @@ ALTER TABLE captain_fees ADD CONSTRAINT captain_fees_pkey PRIMARY KEY (id);
 ALTER TABLE companies ADD CONSTRAINT companies_pkey PRIMARY KEY (id);
 ALTER TABLE company_package_config ADD CONSTRAINT company_package_config_pkey PRIMARY KEY (id);
 ALTER TABLE company_package_config ADD CONSTRAINT company_package_config_company_id_key UNIQUE (company_id);
-ALTER TABLE customer_change_requests ADD CONSTRAINT customer_change_requests_pkey PRIMARY KEY (id);
 ALTER TABLE customer_notes ADD CONSTRAINT customer_notes_pkey PRIMARY KEY (id);
 ALTER TABLE customer_notes ADD CONSTRAINT customer_notes_company_id_customer_email_key UNIQUE (company_id, customer_email);
 ALTER TABLE customer_notification_preferences ADD CONSTRAINT customer_notification_preferences_pkey PRIMARY KEY (id);
 ALTER TABLE customer_notification_preferences ADD CONSTRAINT customer_notification_preferences_company_id_customer_email_key UNIQUE (company_id, customer_email);
-ALTER TABLE customer_portal_tokens ADD CONSTRAINT customer_portal_tokens_pkey PRIMARY KEY (id);
-ALTER TABLE customer_portal_tokens ADD CONSTRAINT customer_portal_tokens_token_key UNIQUE (token);
 ALTER TABLE external_bookings ADD CONSTRAINT external_bookings_pkey PRIMARY KEY (id);
 ALTER TABLE group_bookings ADD CONSTRAINT group_bookings_pkey PRIMARY KEY (id);
 ALTER TABLE notification_preferences ADD CONSTRAINT notification_preferences_pkey PRIMARY KEY (id);
@@ -623,13 +612,8 @@ ALTER TABLE cancellation_policies ADD CONSTRAINT cancellation_policies_company_i
 ALTER TABLE captain_fees ADD CONSTRAINT captain_fees_booking_id_fkey FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE SET NULL;
 ALTER TABLE captain_fees ADD CONSTRAINT captain_fees_captain_id_fkey FOREIGN KEY (captain_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE company_package_config ADD CONSTRAINT company_package_config_company_id_fkey FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE;
-ALTER TABLE customer_change_requests ADD CONSTRAINT customer_change_requests_booking_id_fkey FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE;
-ALTER TABLE customer_change_requests ADD CONSTRAINT customer_change_requests_company_id_fkey FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE;
-ALTER TABLE customer_change_requests ADD CONSTRAINT customer_change_requests_processed_by_fkey FOREIGN KEY (processed_by) REFERENCES users(id) ON DELETE SET NULL;
 ALTER TABLE customer_notes ADD CONSTRAINT customer_notes_company_id_fkey FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE;
 ALTER TABLE customer_notification_preferences ADD CONSTRAINT customer_notification_preferences_company_id_fkey FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE;
-ALTER TABLE customer_portal_tokens ADD CONSTRAINT customer_portal_tokens_booking_id_fkey FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE;
-ALTER TABLE customer_portal_tokens ADD CONSTRAINT customer_portal_tokens_company_id_fkey FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE;
 ALTER TABLE external_bookings ADD CONSTRAINT external_bookings_booking_id_fkey FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE SET NULL;
 ALTER TABLE group_bookings ADD CONSTRAINT group_bookings_company_id_fkey FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE;
 ALTER TABLE group_bookings ADD CONSTRAINT group_bookings_created_by_fkey FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL;
@@ -688,12 +672,6 @@ CREATE INDEX idx_cancellation_policies_active ON public.cancellation_policies US
 CREATE INDEX idx_cancellation_policies_company ON public.cancellation_policies USING btree (company_id);
 CREATE INDEX idx_companies_location ON public.companies USING btree (latitude, longitude);
 CREATE INDEX idx_company_package_config_company_id ON public.company_package_config USING btree (company_id);
-CREATE INDEX idx_change_requests_booking ON public.customer_change_requests USING btree (booking_id);
-CREATE INDEX idx_change_requests_company ON public.customer_change_requests USING btree (company_id);
-CREATE INDEX idx_change_requests_status ON public.customer_change_requests USING btree (status);
-CREATE INDEX idx_customer_portal_tokens_booking ON public.customer_portal_tokens USING btree (booking_id);
-CREATE INDEX idx_customer_portal_tokens_company ON public.customer_portal_tokens USING btree (company_id);
-CREATE INDEX idx_customer_portal_tokens_token ON public.customer_portal_tokens USING btree (token);
 CREATE INDEX idx_external_bookings_processed ON public.external_bookings USING btree (processed);
 CREATE INDEX idx_group_bookings_company ON public.group_bookings USING btree (company_id);
 CREATE INDEX idx_group_bookings_date ON public.group_bookings USING btree (event_date);
@@ -1343,7 +1321,6 @@ BEGIN
 END;
 $function$
 ;
-CREATE OR REPLACE FUNCTION public.create_portal_token(p_booking_id uuid, p_customer_email text, p_customer_name text)
  RETURNS TABLE(token text, expires_at timestamp with time zone)
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -1364,7 +1341,6 @@ BEGIN
 
   -- Check if active token exists
   SELECT pt.token, pt.expires_at INTO v_token, v_expires_at
-  FROM customer_portal_tokens pt
   WHERE pt.booking_id = p_booking_id
     AND pt.is_active = true
     AND pt.expires_at > NOW();
@@ -1374,7 +1350,6 @@ BEGIN
     v_token := generate_portal_token();
     v_expires_at := NOW() + INTERVAL '30 days';
 
-    INSERT INTO customer_portal_tokens (
       booking_id,
       company_id,
       token,
@@ -2893,7 +2868,6 @@ BEGIN
 END;
 $function$
 ;
-CREATE OR REPLACE FUNCTION public.update_change_request_timestamp()
  RETURNS trigger
  LANGUAGE plpgsql
 AS $function$
@@ -2960,14 +2934,12 @@ BEGIN
 END;
 $function$
 ;
-CREATE OR REPLACE FUNCTION public.verify_portal_token(p_token text)
  RETURNS TABLE(booking_id uuid, company_id uuid, customer_email text, customer_name text)
  LANGUAGE plpgsql
  SECURITY DEFINER
 AS $function$
 BEGIN
   -- Update last accessed timestamp
-  UPDATE customer_portal_tokens
   SET last_accessed_at = NOW()
   WHERE token = p_token
     AND is_active = true
@@ -2980,7 +2952,6 @@ BEGIN
     pt.company_id,
     pt.customer_email,
     pt.customer_name
-  FROM customer_portal_tokens pt
   WHERE pt.token = p_token
     AND pt.is_active = true
     AND pt.expires_at > NOW();
@@ -3007,7 +2978,6 @@ CREATE TRIGGER update_bookings_updated_at BEFORE UPDATE ON public.bookings FOR E
 CREATE TRIGGER trigger_update_cancellation_policies_updated_at BEFORE UPDATE ON public.cancellation_policies FOR EACH ROW EXECUTE FUNCTION update_cancellation_policies_updated_at();
 CREATE TRIGGER update_companies_updated_at BEFORE UPDATE ON public.companies FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER trigger_update_company_package_config_timestamp BEFORE UPDATE ON public.company_package_config FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_change_request_timestamp_trigger BEFORE UPDATE ON public.customer_change_requests FOR EACH ROW EXECUTE FUNCTION update_change_request_timestamp();
 CREATE TRIGGER update_customer_notification_preferences_updated_at BEFORE UPDATE ON public.customer_notification_preferences FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_group_bookings_updated_at BEFORE UPDATE ON public.group_bookings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_notification_preferences_updated_at BEFORE UPDATE ON public.notification_preferences FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
@@ -3035,10 +3005,8 @@ ALTER TABLE cancellation_policies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE captain_fees ENABLE ROW LEVEL SECURITY;
 ALTER TABLE companies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE company_package_config ENABLE ROW LEVEL SECURITY;
-ALTER TABLE customer_change_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE customer_notes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE customer_notification_preferences ENABLE ROW LEVEL SECURITY;
-ALTER TABLE customer_portal_tokens ENABLE ROW LEVEL SECURITY;
 ALTER TABLE external_bookings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE group_bookings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notification_preferences ENABLE ROW LEVEL SECURITY;
@@ -3186,7 +3154,6 @@ CREATE POLICY "Admin staff can update package config" ON company_package_config 
   WITH CHECK (((company_id = get_user_company()) AND is_admin_or_office()));
 CREATE POLICY "Users can view their company package config" ON company_package_config FOR SELECT
   USING ((company_id = get_user_company()));
-CREATE POLICY change_requests_company_policy ON customer_change_requests FOR ALL
   USING ((company_id IN ( SELECT users.company_id
    FROM users
   WHERE (users.id = auth.uid()))));
@@ -3202,7 +3169,6 @@ CREATE POLICY "Users can view their company's customer notes" ON customer_notes 
   USING ((company_id = ( SELECT users.company_id
    FROM users
   WHERE (users.id = auth.uid()))));
-CREATE POLICY customer_portal_tokens_company_policy ON customer_portal_tokens FOR ALL
   USING ((company_id IN ( SELECT users.company_id
    FROM users
   WHERE (users.id = auth.uid()))));

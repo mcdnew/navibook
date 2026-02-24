@@ -108,7 +108,7 @@ export default function DashboardBookingsTabs() {
                 <p className="font-semibold text-foreground">{booking.customer_name}</p>
                 <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
                   <Calendar className="w-3.5 h-3.5" />
-                  {format(new Date(booking.booking_date), 'MMM d, yyyy')} at {booking.start_time}
+                  {format(new Date(booking.booking_date), 'MMM d, yyyy')} at {booking.start_time.slice(0, 5)}
                 </p>
                 {booking.boats?.name && (
                   <p className="text-xs text-muted-foreground mt-1">

@@ -285,7 +285,7 @@ export default async function BookingDetailPage({
                     <label className="text-sm font-medium text-muted-foreground">Time</label>
                     <p className="text-lg font-semibold flex items-center gap-2">
                       <Clock className="w-4 h-4" />
-                      {booking.start_time} - {booking.end_time}
+                      {booking.start_time.slice(0, 5)} - {booking.end_time.slice(0, 5)}
                     </p>
                   </div>
                   <div>

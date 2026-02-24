@@ -19,7 +19,7 @@
 
 | Email | Password | Role | What they see |
 |-------|----------|------|---------------|
-| `admin@navibook.com` | `Demo1234!` | Super Admin | Everything (system-level) |
+| `admin@navibook.com` | `Admin123!` | Super Admin | Everything (system-level) |
 | `admin@happysail.es` | `Demo1234!` | Admin | Full company control |
 | `ops@happysail.es` | `Demo1234!` | Operations Manager | Bookings, crew, reports, payments |
 | `agent.marco@happysail.es` | `Demo1234!` | Sales Agent (15% commission) | Own bookings, customers |

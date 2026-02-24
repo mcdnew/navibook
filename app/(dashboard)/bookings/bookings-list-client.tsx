@@ -294,7 +294,7 @@ export default function BookingsListClient({
                       <span className="hidden sm:inline">•</span>
                       <span className="inline-flex items-center gap-1">
                         <CalendarIcon className="w-3.5 h-3.5" />
-                        {format(new Date(booking.booking_date), 'MMM d, yyyy')} at {booking.start_time}
+                        {format(new Date(booking.booking_date), 'MMM d, yyyy')} at {booking.start_time.slice(0, 5)}
                       </span>
                     </div>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-muted-foreground">

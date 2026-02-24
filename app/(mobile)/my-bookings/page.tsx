@@ -42,6 +42,7 @@ export default async function MyBookingsPage() {
         captain_fee,
         status,
         package_type,
+        passengers,
         boats (name),
         users!agent_id (first_name, last_name)
       `)
@@ -63,6 +64,7 @@ export default async function MyBookingsPage() {
           total_price,
           status,
           package_type,
+          passengers,
           boats (name),
           users!agent_id (first_name, last_name)
         )
@@ -134,16 +136,12 @@ export default async function MyBookingsPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4 text-muted-foreground" />
-                        <span>{booking.start_time} ({booking.duration})</span>
+                        <span>{booking.start_time.slice(0, 5)} ({booking.duration})</span>
                       </div>
-                      {booking.agents && (
-                        <div className="flex items-center gap-2">
-                          <User className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">
-                            Agent: {(booking as any).users?.first_name} {(booking as any).users?.last_name}
-                          </span>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-muted-foreground" />
+                        <span>{booking.passengers} passengers</span>
+                      </div>
                       <div className="flex items-center gap-2">
                         <Euro className="w-4 h-4 text-muted-foreground" />
                         <span className="font-medium">
@@ -189,14 +187,20 @@ export default async function MyBookingsPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4 text-muted-foreground" />
-                        <span>{booking.start_time} ({booking.duration})</span>
+                        <span>{booking.start_time.slice(0, 5)} ({booking.duration})</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-muted-foreground" />
+                        <span>{booking.passengers} passengers</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Euro className="w-4 h-4 text-muted-foreground" />
                         <span className="font-medium">
-                          {userRecord.role === 'captain'
-                            ? `€${(booking.captain_fee || 0).toFixed(2)}`
-                            : `€${(booking.sailor_fee || 0).toFixed(2)}`}
+                          {booking.status === 'cancelled'
+                            ? '€0.00'
+                            : userRecord.role === 'captain'
+                              ? `€${(booking.captain_fee || 0).toFixed(2)}`
+                              : `€${(booking.sailor_fee || 0).toFixed(2)}`}
                         </span>
                       </div>
                     </div>

@@ -53,7 +53,7 @@ const STATUS_CONFIG = {
 export default function WaitlistClient({ waitlist, boats }: WaitlistClientProps) {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('active')
+  const [statusFilter, setStatusFilter] = useState('all')
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [convertDialogOpen, setConvertDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)

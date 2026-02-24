@@ -129,12 +129,12 @@ export default async function DashboardPage() {
                 <p className="text-muted-foreground text-xs uppercase tracking-wide mb-1">Company</p>
                 <p className="font-semibold text-foreground">{userRecord?.companies?.name}</p>
               </div>
-              {userRecord?.commission_percentage && (
+              {userRecord?.commission_percentage ? (
                 <div>
                   <p className="text-muted-foreground text-xs uppercase tracking-wide mb-1">Commission</p>
                   <p className="font-semibold text-foreground">{userRecord.commission_percentage}%</p>
                 </div>
-              )}
+              ) : null}
               <div>
                 <p className="text-muted-foreground text-xs uppercase tracking-wide mb-1">Status</p>
                 <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
@@ -193,7 +193,7 @@ export default async function DashboardPage() {
                               </p>
                               <p className="text-sm text-muted-foreground flex items-center gap-1">
                                 <Clock className="w-3 h-3" />
-                                {charter.start_time} - {charter.end_time}
+                                {charter.start_time.slice(0, 5)} - {charter.end_time.slice(0, 5)}
                               </p>
                             </div>
                             <div>

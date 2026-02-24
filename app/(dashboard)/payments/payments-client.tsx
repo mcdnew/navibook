@@ -416,7 +416,7 @@ export default function PaymentsClient({ bookings: initialBookings }: PaymentsCl
                       {getPaymentStatusBadge(booking.payment_status)}
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {booking.booking_date} at {booking.start_time} • {booking.boats?.name}
+                      {booking.booking_date} at {booking.start_time.slice(0, 5)} • {booking.boats?.name}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {booking.customer_email || booking.customer_phone}

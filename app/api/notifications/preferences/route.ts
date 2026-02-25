@@ -85,7 +85,7 @@ export async function PUT(request: Request) {
         user_id: user.id,
         company_id: userRecord.company_id,
         ...preferences,
-      })
+      }, { onConflict: 'user_id' })
       .select()
       .single()
 

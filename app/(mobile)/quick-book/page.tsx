@@ -9,36 +9,15 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Calendar } from '@/components/ui/calendar'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
-import { CheckCircle2, Clock, AlertCircle } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 import BookingWeatherCard from '@/app/components/weather/booking-weather-card'
 import SailorSelect from '@/app/components/booking/sailor-select'
 import { calculateAllBookingCosts } from '@/lib/booking/cost-calculator'
-
-type Boat = {
-  boat_id: string
-  boat_name: string
-  boat_type: string
-  capacity: number
-  image_url?: string
-}
-
-type Pricing = {
-  id: string
-  boat_id: string
-  duration: string
-  package_type: string
-  price: number
-}
+import ConfirmationDialog from '@/app/components/quick-book/confirmation-dialog'
+import BoatSelectorCard, { type Boat, type Pricing } from '@/app/components/quick-book/boat-selector-card'
+import { BookingSummaryCard, ConfirmationOptionCard } from '@/app/components/quick-book/booking-summary-card'
 
 type User = {
   id: string
@@ -913,135 +892,22 @@ export default function QuickBookPage() {
           />
 
           {/* Available Boats */}
-          <Card id="boat" className={fieldErrors.boat ? 'border-red-500 border-2' : ''}>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Choose Your Boat {fieldErrors.boat && '*'}</span>
-                {fieldErrors.boat && (
-                  <span className="text-sm font-normal text-red-600">Required</span>
-                )}
-              </CardTitle>
-              <CardDescription>
-                {loadingBoats
-                  ? 'Checking availability...'
-                  : `${availableBoats.length} boats available for this time slot. Select any boat you prefer.`}
-              </CardDescription>
-              {fieldErrors.boat && (
-                <p className="text-sm text-red-600 font-semibold mt-2">
-                  {fieldErrors.boat}
-                </p>
-              )}
-            </CardHeader>
-            <CardContent>
-              {loadingBoats ? (
-                <p className="text-sm text-muted-foreground">Loading...</p>
-              ) : availableBoats.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  No boats available for selected time slot. Try different time or date.
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {availableBoats.map((boat) => {
-                    const boatPrice = pricing.find(
-                      p => p.boat_id === boat.boat_id && p.package_type === packageType
-                    )
-
-                    // Check if boat meets passenger requirements
-                    const passengersNum = parseInt(passengers) || 0
-                    const meetsCapacity = boat.capacity >= passengersNum
-                    const isRecommended = boat.capacity >= passengersNum && boat.capacity <= passengersNum + 2
-
-                    return (
-                      <div
-                        key={boat.boat_id}
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          setSelectedBoat(boat.boat_id)
-                          // Clear error when user selects a boat
-                          if (fieldErrors.boat) {
-                            setFieldErrors(prev => ({ ...prev, boat: undefined }))
-                          }
-                        }}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            setSelectedBoat(boat.boat_id)
-                          }
-                        }}
-                        className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md min-h-[88px] ${
-                          selectedBoat === boat.boat_id
-                            ? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-950 ring-2 ring-blue-200 dark:ring-blue-700'
-                            : !meetsCapacity
-                            ? 'border-orange-200 dark:border-orange-700 bg-orange-50 dark:bg-orange-950 hover:border-orange-300 dark:hover:border-orange-600'
-                            : fieldErrors.boat
-                            ? 'border-red-200 dark:border-red-700 hover:border-red-300 dark:hover:border-red-600'
-                            : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600'
-                        }`}
-                        style={{ position: 'relative', zIndex: 1 }}
-                      >
-                        <div className="flex items-start sm:items-center gap-3 flex-1 min-w-0">
-                          <input
-                            type="radio"
-                            name="boat"
-                            value={boat.boat_id}
-                            checked={selectedBoat === boat.boat_id}
-                            onChange={() => {
-                              // Handled by div onClick
-                            }}
-                            className="w-4 h-4 pointer-events-none mt-0.5 sm:mt-0 flex-shrink-0"
-                            readOnly
-                            tabIndex={-1}
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap mb-1">
-                              <p className="font-semibold break-words">{boat.boat_name}</p>
-                              {isRecommended && (
-                                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full whitespace-nowrap">
-                                  Recommended
-                                </span>
-                              )}
-                              {!meetsCapacity && (
-                                <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full whitespace-nowrap">
-                                  Too Small
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-sm text-muted-foreground capitalize break-words">
-                              {boat.boat_type} • {boat.capacity} pax
-                            </p>
-                            {!meetsCapacity && (
-                              <p className="text-xs text-orange-600 mt-1 break-words">
-                                Needs {passengersNum - boat.capacity} more {passengersNum - boat.capacity === 1 ? 'seat' : 'seats'}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 sm:gap-0 flex-shrink-0 sm:text-right">
-                          <p className="font-bold text-base sm:text-lg">
-                            €{boatPrice?.price || 0}
-                          </p>
-                          <div className="flex items-center gap-2 sm:flex-col sm:items-end sm:gap-0">
-                            <p className="text-xs text-muted-foreground">
-                              {duration}
-                            </p>
-                            {passengersNum > 0 && (
-                              <p className={`text-xs ${
-                                meetsCapacity ? 'text-green-600' : 'text-orange-600'
-                              }`}>
-                                {meetsCapacity ? '✓' : '✗'} {passengersNum} pax
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <BoatSelectorCard
+            availableBoats={availableBoats}
+            selectedBoat={selectedBoat}
+            onSelectBoat={(id) => {
+              setSelectedBoat(id)
+              if (fieldErrors.boat) {
+                setFieldErrors(prev => ({ ...prev, boat: undefined }))
+              }
+            }}
+            pricing={pricing}
+            packageType={packageType}
+            passengers={passengers}
+            duration={duration}
+            loadingBoats={loadingBoats}
+            fieldError={fieldErrors.boat}
+          />
 
           {/* Captain Selection - Only for admin/manager/office_staff */}
           {selectedBoat && captains.length > 0 && canAssignCrew && !isBareBoat && bookingCategory !== 'bare_boat' && (
@@ -1214,136 +1080,29 @@ export default function QuickBookPage() {
           )}
 
           {/* Summary */}
-          {selectedBoat && totalPrice > 0 && (
-            <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950">
-              <CardHeader>
-                <CardTitle>Booking Summary</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Date:</span>
-                  <span className="font-semibold">{format(date, 'PPP')}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Time:</span>
-                  <span className="font-semibold">
-                    {startTime} - {calculateEndTime(startTime, duration)} ({duration})
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Passengers:</span>
-                  <span className="font-semibold">{passengers}</span>
-                </div>
-                <div className="flex justify-between text-lg font-bold border-t dark:border-blue-800 pt-2 mt-2">
-                  <span>Total Price:</span>
-                  <span className="text-blue-600 dark:text-blue-300">€{totalPrice.toFixed(2)}</span>
-                </div>
-                {fuelCost > 0 && (
-                  <div className="flex justify-between text-sm text-orange-600 dark:text-orange-400">
-                    <span>Fuel Cost:</span>
-                    <span className="font-semibold">€{fuelCost.toFixed(2)}</span>
-                  </div>
-                )}
-                {packageAddonCost > 0 && (
-                  <div className="flex justify-between text-sm text-purple-600 dark:text-purple-400">
-                    <span>Package Add-on Cost:</span>
-                    <span className="font-semibold">€{packageAddonCost.toFixed(2)}</span>
-                  </div>
-                )}
-                {(fuelCost > 0 || packageAddonCost > 0) && (
-                  <div className="flex justify-between text-sm font-semibold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 p-2 rounded">
-                    <span>Total Operational Costs:</span>
-                    <span>€{(fuelCost + packageAddonCost).toFixed(2)}</span>
-                  </div>
-                )}
-                {captainFee > 0 && (
-                  <div className="flex justify-between text-sm text-orange-600 dark:text-orange-400">
-                    <span>Captain Cost:</span>
-                    <span className="font-semibold">€{captainFee.toFixed(2)}</span>
-                  </div>
-                )}
-                {canCreateInternalBookings && (fuelCost > 0 || packageAddonCost > 0 || captainFee > 0) && (
-                  <div className="flex justify-between text-sm font-semibold text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950 p-2 rounded border border-green-200 dark:border-green-800">
-                    <span>Net Profit (after costs):</span>
-                    <span>€{(totalPrice - fuelCost - packageAddonCost - captainFee).toFixed(2)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
-                  <span>Your Commission ({user?.commission_percentage}%):</span>
-                  <span className="font-semibold">€{commission.toFixed(2)}</span>
-                </div>
-                {parseFloat(depositAmount) > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span>Deposit:</span>
-                    <span className="font-semibold">€{depositAmount}</span>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
+          <BookingSummaryCard
+            visible={!!(selectedBoat && totalPrice > 0)}
+            date={date}
+            startTime={startTime}
+            duration={duration}
+            passengers={passengers}
+            totalPrice={totalPrice}
+            fuelCost={fuelCost}
+            packageAddonCost={packageAddonCost}
+            captainFee={captainFee}
+            commission={commission}
+            depositAmount={depositAmount}
+            canCreateInternalBookings={canCreateInternalBookings}
+            userCommissionPercentage={user?.commission_percentage}
+            calculateEndTime={calculateEndTime}
+          />
 
           {/* Booking Confirmation Option */}
-          {selectedBoat && (
-            <Card className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950 dark:to-blue-950">
-              <CardHeader>
-                <CardTitle className="text-base">Confirmation Option</CardTitle>
-                <CardDescription>Choose how to process this booking</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div
-                  onClick={() => setConfirmImmediately(false)}
-                  className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                    !confirmImmediately
-                      ? 'border-orange-500 bg-orange-50 ring-2 ring-orange-200'
-                      : 'border-gray-200 hover:bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="radio"
-                      name="confirmOption"
-                      checked={!confirmImmediately}
-                      onChange={() => setConfirmImmediately(false)}
-                      className="w-4 h-4"
-                    />
-                    <div className="flex-1">
-                      <p className="font-semibold">Hold for 15 Minutes</p>
-                      <p className="text-sm text-muted-foreground">
-                        Reserve the boat with a temporary hold. You can confirm later.
-                      </p>
-                    </div>
-                    <Clock className="w-5 h-5 text-orange-600" />
-                  </div>
-                </div>
-
-                <div
-                  onClick={() => setConfirmImmediately(true)}
-                  className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                    confirmImmediately
-                      ? 'border-green-500 dark:border-green-600 bg-green-50 dark:bg-green-950 ring-2 ring-green-200 dark:ring-green-700'
-                      : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="radio"
-                      name="confirmOption"
-                      checked={confirmImmediately}
-                      onChange={() => setConfirmImmediately(true)}
-                      className="w-4 h-4"
-                    />
-                    <div className="flex-1">
-                      <p className="font-semibold">Confirm Immediately</p>
-                      <p className="text-sm text-muted-foreground">
-                        Finalize the booking right away. No hold period.
-                      </p>
-                    </div>
-                    <CheckCircle2 className="w-5 h-5 text-green-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          <ConfirmationOptionCard
+            visible={!!selectedBoat}
+            confirmImmediately={confirmImmediately}
+            onChange={setConfirmImmediately}
+          />
 
           {/* Submit Button */}
           {selectedBoat && (
@@ -1365,141 +1124,36 @@ export default function QuickBookPage() {
           )}
         </form>
 
-        {/* Confirmation Dialog */}
-        <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-green-600">
-                <CheckCircle2 className="w-6 h-6" />
-                Booking Created Successfully!
-              </DialogTitle>
-              <DialogDescription>
-                Your booking has been created with a 15-minute hold.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4 py-4">
-              {/* Hold Timer (only show if not confirmed immediately) */}
-              {!confirmImmediately && timeRemaining > 0 ? (
-                <Card className="border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-                        <span className="font-semibold text-orange-900 dark:text-orange-100">Time Remaining:</span>
-                      </div>
-                      <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                        {formatTimeRemaining(timeRemaining)}
-                      </span>
-                    </div>
-                    <p className="text-xs text-orange-700 dark:text-orange-300 mt-2">
-                      This booking will be automatically released if not confirmed within 15 minutes.
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : !confirmImmediately ? (
-                <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center gap-2">
-                      <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
-                      <span className="font-semibold text-red-900 dark:text-red-100">Hold Expired</span>
-                    </div>
-                    <p className="text-sm text-red-700 dark:text-red-300 mt-2">
-                      The 15-minute hold has expired. Please create a new booking.
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : null}
-
-              {/* Confirmed Status */}
-              {confirmImmediately && (
-                <Card className="border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-6 h-6 text-green-600 dark:text-green-400" />
-                      <span className="font-semibold text-green-900 dark:text-green-100 text-lg">Booking Confirmed</span>
-                    </div>
-                    <p className="text-sm text-green-700 dark:text-green-300 mt-2">
-                      This booking has been confirmed and is now active.
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Booking Details */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Booking Details</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Booking ID:</span>
-                    <span className="font-mono font-semibold">{bookingId?.slice(0, 8)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Date:</span>
-                    <span className="font-semibold">{format(date, 'PPP')}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Time:</span>
-                    <span className="font-semibold">
-                      {startTime} - {calculateEndTime(startTime, duration)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Boat:</span>
-                    <span className="font-semibold">
-                      {availableBoats.find(b => b.boat_id === selectedBoat)?.boat_name}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Customer:</span>
-                    <span className="font-semibold">{customerName}</span>
-                  </div>
-                  <div className="flex justify-between border-t pt-2">
-                    <span className="text-muted-foreground">Total:</span>
-                    <span className="font-bold text-lg">€{totalPrice.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-green-600">
-                    <span>Your Commission:</span>
-                    <span className="font-semibold">€{commission.toFixed(2)}</span>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Actions */}
-              <div className="flex flex-col gap-2">
-                <Button
-                  onClick={() => {
-                    router.push('/dashboard')
-                  }}
-                  className="w-full"
-                >
-                  View in Dashboard
-                </Button>
-                <Button
-                  onClick={() => {
-                    setShowConfirmation(false)
-                    setBookingId(null)
-                    setHoldUntil(null)
-                    // Reset form
-                    setSelectedBoat('')
-                    setSelectedCaptain('none')
-                    setCustomerName('')
-                    setCustomerPhone('')
-                    setCustomerEmail('')
-                    setNotes('')
-                    setDepositAmount('0')
-                  }}
-                  variant="outline"
-                  className="w-full"
-                >
-                  Create Another Booking
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <ConfirmationDialog
+          open={showConfirmation}
+          onOpenChange={setShowConfirmation}
+          bookingId={bookingId}
+          holdUntil={holdUntil}
+          timeRemaining={timeRemaining}
+          formatTimeRemaining={formatTimeRemaining}
+          confirmImmediately={confirmImmediately}
+          onViewDashboard={() => router.push('/dashboard')}
+          onCreateAnother={() => {
+            setShowConfirmation(false)
+            setBookingId(null)
+            setHoldUntil(null)
+            setSelectedBoat('')
+            setSelectedCaptain('none')
+            setCustomerName('')
+            setCustomerPhone('')
+            setCustomerEmail('')
+            setNotes('')
+            setDepositAmount('0')
+          }}
+          date={date}
+          startTime={startTime}
+          duration={duration}
+          selectedBoatName={availableBoats.find(b => b.boat_id === selectedBoat)?.boat_name}
+          customerName={customerName}
+          totalPrice={totalPrice}
+          commission={commission}
+          calculateEndTime={calculateEndTime}
+        />
       </div>
     </div>
   )

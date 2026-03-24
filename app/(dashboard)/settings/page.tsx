@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import Link from 'next/link'
-import { ArrowLeft, Settings, Building2, Ship, Fuel, Zap, Banknote, AlertCircle, Users, Calendar } from 'lucide-react'
+import { ArrowLeft, Settings, Building2, Ship, Fuel, Zap, Banknote, AlertCircle, Users, Calendar, Key } from 'lucide-react'
 
 export default async function SettingsPage() {
   const supabase = await createClient()
@@ -207,6 +207,30 @@ export default async function SettingsPage() {
               <CardContent>
                 <Button asChild className="w-full" disabled={!isAdmin} variant={!isAdmin ? 'outline' : 'default'}>
                   <Link href="/waitlist">Manage</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Integrations Section */}
+        <div className="space-y-4">
+          <h2 className="text-2xl font-semibold flex items-center gap-2">
+            <Key className="w-6 h-6" />
+            Integrations
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Key className="w-5 h-5" />
+                  Partner API
+                </CardTitle>
+                <CardDescription>Manage API keys for external booking integrations</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button asChild variant="outline" className="w-full" disabled={!isAdmin}>
+                  <Link href="/settings/api-keys">Manage API Keys</Link>
                 </Button>
               </CardContent>
             </Card>

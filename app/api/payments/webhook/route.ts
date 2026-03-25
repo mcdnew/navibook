@@ -62,7 +62,7 @@ export async function POST(request: Request) {
         }
 
         // Record payment transaction
-        await supabase.from('payment_transactions').insert({
+        const { error: insertError } = await supabase.from('payment_transactions').insert({
           booking_id: bookingId,
           company_id: booking.company_id,
           amount: amount,
@@ -72,6 +72,11 @@ export async function POST(request: Request) {
           notes: `Stripe Checkout Session: ${session.id}`,
           payment_date: new Date().toISOString().split('T')[0],
         })
+
+        if (insertError) {
+          console.error('Failed to record payment transaction:', insertError)
+          break
+        }
 
         // Calculate total paid
         const { data: payments } = await supabase

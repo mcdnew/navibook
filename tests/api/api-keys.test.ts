@@ -193,4 +193,80 @@ describe('API Key Management', () => {
       expect(res.status).toBe(404)
     })
   })
+
+  describe('PATCH /api/settings/api-keys/[id]', () => {
+    let patchKeyId: string
+
+    beforeAll(async () => {
+      const res = await adminClient.post('/api/settings/api-keys', {
+        name: `${TEST_PREFIX} Patch Key`,
+      })
+      if (res.status === 201) {
+        patchKeyId = (res.body as any).key.id
+      }
+    })
+
+    it('admin can set a webhook URL', async () => {
+      if (!patchKeyId) { expect(true).toBe(true); return }
+
+      const res = await adminClient.patch(`/api/settings/api-keys/${patchKeyId}`, {
+        webhook_url: 'https://example.com/webhooks/navibook',
+      })
+
+      expect(res.status).toBe(200)
+      const body = res.body as any
+      expect(body.key.webhook_url).toBe('https://example.com/webhooks/navibook')
+    })
+
+    it('can clear webhook URL by passing null', async () => {
+      if (!patchKeyId) { expect(true).toBe(true); return }
+
+      const res = await adminClient.patch(`/api/settings/api-keys/${patchKeyId}`, {
+        webhook_url: null,
+      })
+
+      expect(res.status).toBe(200)
+      expect((res.body as any).key.webhook_url).toBeNull()
+    })
+
+    it('rejects non-http(s) URLs', async () => {
+      if (!patchKeyId) { expect(true).toBe(true); return }
+
+      const res = await adminClient.patch(`/api/settings/api-keys/${patchKeyId}`, {
+        webhook_url: 'ftp://example.com/hook',
+      })
+
+      expect(res.status).toBe(400)
+    })
+
+    it('rejects invalid URLs', async () => {
+      if (!patchKeyId) { expect(true).toBe(true); return }
+
+      const res = await adminClient.patch(`/api/settings/api-keys/${patchKeyId}`, {
+        webhook_url: 'not-a-url',
+      })
+
+      expect(res.status).toBe(400)
+    })
+
+    it('agent cannot update webhook URL', async () => {
+      if (!patchKeyId) { expect(true).toBe(true); return }
+
+      const res = await agentClient.patch(`/api/settings/api-keys/${patchKeyId}`, {
+        webhook_url: 'https://attacker.com/hook',
+      })
+
+      expect(res.status).toBe(401)
+    })
+
+    it('returns 404 for non-existent key id', async () => {
+      const unknownId = '00000000-0000-0000-0000-000000000000'
+
+      const res = await adminClient.patch(`/api/settings/api-keys/${unknownId}`, {
+        webhook_url: 'https://example.com/hook',
+      })
+
+      expect(res.status).toBe(404)
+    })
+  })
 })

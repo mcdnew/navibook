@@ -145,6 +145,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'passengers must be a positive integer' }, { status: 400 })
     }
 
+    // Validate email format if provided
+    if (customer_email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(customer_email)) {
+        return NextResponse.json({ error: 'Invalid customer email format' }, { status: 400 })
+      }
+    }
+
     const supabase = createAdminClient()
 
     // Verify boat belongs to company and is active

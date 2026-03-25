@@ -60,7 +60,9 @@ export default function ConfirmationDialog({
             Booking Created Successfully!
           </DialogTitle>
           <DialogDescription>
-            Your booking has been created with a 15-minute hold.
+            {confirmImmediately
+              ? 'Your booking has been confirmed and is now active.'
+              : 'Your booking has been created with a 15-minute hold.'}
           </DialogDescription>
         </DialogHeader>
 

@@ -9,6 +9,14 @@ const rateLimitMap = new Map<string, { count: number; windowStart: number }>()
 const RATE_LIMIT = 60
 const WINDOW_MS = 60_000
 
+// Purge expired entries every 5 minutes to prevent unbounded map growth
+setInterval(() => {
+  const now = Date.now()
+  for (const [key, entry] of Array.from(rateLimitMap)) {
+    if (now - entry.windowStart > WINDOW_MS) rateLimitMap.delete(key)
+  }
+}, 5 * 60_000).unref?.()
+
 export function checkRateLimit(keyId: string): boolean {
   const now = Date.now()
   const entry = rateLimitMap.get(keyId)

@@ -26,6 +26,35 @@ export async function POST(request: Request) {
       )
     }
 
+    // Get user's company
+    const { data: userRecord } = await supabase
+      .from('users')
+      .select('company_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!userRecord) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      )
+    }
+
+    // Verify booking belongs to user's company before confirming
+    const { data: booking } = await supabase
+      .from('bookings')
+      .select('id')
+      .eq('id', bookingId)
+      .eq('company_id', userRecord.company_id)
+      .single()
+
+    if (!booking) {
+      return NextResponse.json(
+        { error: 'Booking not found' },
+        { status: 404 }
+      )
+    }
+
     // Call the confirm_booking database function
     const { data, error } = await supabase
       .rpc('confirm_booking', {

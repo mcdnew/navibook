@@ -14,7 +14,8 @@ export function signWebhookPayload(secret: string, body: string): string {
 /**
  * Fire-and-forget webhook delivery for API-sourced bookings.
  * Looks up the booking's api_key_id, fetches the key's webhook_url + secret,
- * signs with HMAC-SHA256, and POSTs. Never throws or blocks the caller.
+ * signs with HMAC-SHA256, and POSTs. Retries up to 3 times with exponential
+ * backoff (1s, 2s, 4s). Never throws or blocks the caller.
  */
 export function triggerWebhook(bookingId: string, event: WebhookEvent): void {
   void deliverWebhook(bookingId, event)
@@ -88,18 +89,33 @@ async function deliverWebhook(bookingId: string, event: WebhookEvent): Promise<v
     const body = JSON.stringify(payload)
     const signature = signWebhookPayload(apiKey.webhook_secret, body)
 
-    await fetch(apiKey.webhook_url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-NaviBook-Signature': signature,
-        'X-NaviBook-Event': event,
-      },
-      body,
-      signal: AbortSignal.timeout(10_000),
-    })
+    const MAX_ATTEMPTS = 3
+    let lastErr: string | undefined
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      try {
+        const res = await fetch(apiKey.webhook_url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-NaviBook-Signature': signature,
+            'X-NaviBook-Event': event,
+            'X-NaviBook-Attempt': String(attempt),
+          },
+          body,
+          signal: AbortSignal.timeout(10_000),
+        })
+        if (res.ok) return
+        lastErr = `HTTP ${res.status}`
+      } catch (err) {
+        lastErr = err instanceof Error ? err.message : String(err)
+      }
+      if (attempt < MAX_ATTEMPTS) {
+        await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt - 1)))
+      }
+    }
+    console.error(`[webhook] all ${MAX_ATTEMPTS} attempts failed [${event}] booking=${bookingId}: ${lastErr}`)
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err)
-    console.error(`[webhook] delivery failed [${event}] booking=${bookingId}: ${msg}`)
+    console.error(`[webhook] delivery error [${event}] booking=${bookingId}: ${msg}`)
   }
 }

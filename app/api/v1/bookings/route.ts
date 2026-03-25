@@ -21,6 +21,119 @@ function addHoursToTime(time: string, hours: number): string {
   return `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`
 }
 
+export async function GET(request: Request) {
+  try {
+    // Authenticate
+    const apiKeyResult = await validateApiKey(request)
+    if (!apiKeyResult) {
+      return NextResponse.json({ error: 'Invalid or missing API key' }, { status: 401 })
+    }
+    if (apiKeyResult.revoked) {
+      return NextResponse.json({ error: 'API key has been revoked' }, { status: 401 })
+    }
+
+    // Rate limit
+    if (!checkRateLimit(apiKeyResult.keyId)) {
+      return NextResponse.json({ error: 'Rate limit exceeded. Maximum 60 requests per minute.' }, { status: 429 })
+    }
+
+    const { companyId } = apiKeyResult
+    const { searchParams } = new URL(request.url)
+
+    // Optional filters
+    const status = searchParams.get('status')
+    const dateFrom = searchParams.get('date_from')
+    const dateTo = searchParams.get('date_to')
+    const limitParam = searchParams.get('limit')
+    const offsetParam = searchParams.get('offset')
+
+    const limit = Math.min(Math.max(parseInt(limitParam ?? '50', 10) || 50, 1), 100)
+    const offset = Math.max(parseInt(offsetParam ?? '0', 10) || 0, 0)
+
+    const VALID_STATUSES = ['pending_hold', 'confirmed', 'cancelled', 'completed', 'no_show']
+    if (status && !VALID_STATUSES.includes(status)) {
+      return NextResponse.json(
+        { error: `Invalid status. Must be one of: ${VALID_STATUSES.join(', ')}` },
+        { status: 400 }
+      )
+    }
+
+    if (dateFrom && !/^\d{4}-\d{2}-\d{2}$/.test(dateFrom)) {
+      return NextResponse.json({ error: 'date_from must be YYYY-MM-DD' }, { status: 400 })
+    }
+    if (dateTo && !/^\d{4}-\d{2}-\d{2}$/.test(dateTo)) {
+      return NextResponse.json({ error: 'date_to must be YYYY-MM-DD' }, { status: 400 })
+    }
+
+    const supabase = createAdminClient()
+
+    let query = supabase
+      .from('bookings')
+      .select(`
+        id,
+        status,
+        booking_date,
+        start_time,
+        end_time,
+        duration,
+        passengers,
+        package_type,
+        total_price,
+        customer_name,
+        customer_phone,
+        customer_email,
+        notes,
+        source,
+        created_at,
+        updated_at,
+        boats(name)
+      `, { count: 'exact' })
+      .eq('company_id', companyId)
+      .order('booking_date', { ascending: false })
+      .order('start_time', { ascending: false })
+      .range(offset, offset + limit - 1)
+
+    if (status) query = query.eq('status', status)
+    if (dateFrom) query = query.gte('booking_date', dateFrom)
+    if (dateTo) query = query.lte('booking_date', dateTo)
+
+    const { data: bookings, error, count } = await query
+
+    if (error) {
+      console.error('v1/bookings GET error:', error)
+      return NextResponse.json({ error: 'Failed to fetch bookings' }, { status: 500 })
+    }
+
+    return NextResponse.json({
+      bookings: (bookings ?? []).map((b: any) => ({
+        booking_id: b.id,
+        status: b.status,
+        boat_name: (b.boats as { name: string } | null)?.name ?? null,
+        date: b.booking_date,
+        start_time: b.start_time,
+        end_time: b.end_time,
+        duration: b.duration,
+        passengers: b.passengers,
+        package_type: b.package_type,
+        total_price: b.total_price,
+        customer_name: b.customer_name,
+        customer_phone: b.customer_phone,
+        customer_email: b.customer_email,
+        notes: b.notes,
+        source: b.source,
+        created_at: b.created_at,
+        updated_at: b.updated_at,
+      })),
+      total: count ?? 0,
+      limit,
+      offset,
+    })
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Internal server error'
+    console.error('v1/bookings GET error:', error)
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
+}
 
 export async function POST(request: Request) {
   try {

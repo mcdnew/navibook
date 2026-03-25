@@ -437,6 +437,85 @@ describe('External API v1', () => {
     })
   })
 
+  describe('GET /api/v1/bookings', () => {
+    it('returns a list of bookings', async () => {
+      const res = await apiV1('GET', '/api/v1/bookings', undefined, undefined, apiKey)
+      expect(res.status).toBe(200)
+      const body = res.body as any
+      expect(body).toHaveProperty('bookings')
+      expect(Array.isArray(body.bookings)).toBe(true)
+      expect(body).toHaveProperty('total')
+      expect(body).toHaveProperty('limit')
+      expect(body).toHaveProperty('offset')
+    })
+
+    it('each booking has expected shape', async () => {
+      const res = await apiV1('GET', '/api/v1/bookings', undefined, { limit: '1' }, apiKey)
+      expect(res.status).toBe(200)
+      const body = res.body as any
+      if (body.bookings.length > 0) {
+        const b = body.bookings[0]
+        expect(b).toHaveProperty('booking_id')
+        expect(b).toHaveProperty('status')
+        expect(b).toHaveProperty('date')
+        expect(b).toHaveProperty('start_time')
+        expect(b).toHaveProperty('total_price')
+      }
+    })
+
+    it('respects limit and offset', async () => {
+      const res = await apiV1('GET', '/api/v1/bookings', undefined, { limit: '5', offset: '0' }, apiKey)
+      expect(res.status).toBe(200)
+      const body = res.body as any
+      expect(body.limit).toBe(5)
+      expect(body.offset).toBe(0)
+      expect(body.bookings.length).toBeLessThanOrEqual(5)
+    })
+
+    it('clamps limit to 100', async () => {
+      const res = await apiV1('GET', '/api/v1/bookings', undefined, { limit: '999' }, apiKey)
+      expect(res.status).toBe(200)
+      expect((res.body as any).limit).toBe(100)
+    })
+
+    it('filters by status', async () => {
+      const res = await apiV1('GET', '/api/v1/bookings', undefined, { status: 'confirmed' }, apiKey)
+      expect(res.status).toBe(200)
+      const body = res.body as any
+      for (const b of body.bookings) {
+        expect(b.status).toBe('confirmed')
+      }
+    })
+
+    it('rejects invalid status', async () => {
+      const res = await apiV1('GET', '/api/v1/bookings', undefined, { status: 'invalid' }, apiKey)
+      expect(res.status).toBe(400)
+    })
+
+    it('filters by date_from and date_to', async () => {
+      const res = await apiV1('GET', '/api/v1/bookings', undefined, {
+        date_from: '2026-01-01',
+        date_to: '2026-12-31',
+      }, apiKey)
+      expect(res.status).toBe(200)
+      const body = res.body as any
+      for (const b of body.bookings) {
+        expect(b.date >= '2026-01-01').toBe(true)
+        expect(b.date <= '2026-12-31').toBe(true)
+      }
+    })
+
+    it('rejects invalid date_from format', async () => {
+      const res = await apiV1('GET', '/api/v1/bookings', undefined, { date_from: '01-01-2026' }, apiKey)
+      expect(res.status).toBe(400)
+    })
+
+    it('requires auth', async () => {
+      const res = await apiV1('GET', '/api/v1/bookings')
+      expect(res.status).toBe(401)
+    })
+  })
+
   describe('Webhook signature (signWebhookPayload)', () => {
     it('produces sha256= prefixed HMAC', () => {
       const sig = signWebhookPayload('mysecret', '{"hello":"world"}')

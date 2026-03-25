@@ -128,7 +128,7 @@ export async function POST(request: Request) {
 
         if (payment) {
           // Record refund transaction
-          await supabase.from('payment_transactions').insert({
+          const { error: refundError } = await supabase.from('payment_transactions').insert({
             booking_id: payment.booking_id,
             company_id: payment.company_id,
             amount: -(charge.amount_refunded / 100), // Negative amount for refund
@@ -139,7 +139,11 @@ export async function POST(request: Request) {
             payment_date: new Date().toISOString().split('T')[0],
           })
 
-          console.log(`Refund processed for booking ${payment.booking_id}`)
+          if (refundError) {
+            console.error('Failed to record refund transaction:', refundError)
+          } else {
+            console.log(`Refund processed for booking ${payment.booking_id}`)
+          }
         }
         break
       }

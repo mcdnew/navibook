@@ -100,7 +100,7 @@ export async function POST(request: Request) {
     }
 
     // Store payment link in booking notes or separate table
-    await supabase
+    const { error: updateError } = await supabase
       .from('bookings')
       .update({
         notes: booking.notes
@@ -108,6 +108,11 @@ export async function POST(request: Request) {
           : `Payment link (${paymentType}): ${result.paymentLinkUrl}`,
       })
       .eq('id', bookingId)
+
+    if (updateError) {
+      console.error('Failed to update booking with payment link:', updateError)
+      // Continue with response even if notes update fails, payment link is already created
+    }
 
     return NextResponse.json({
       success: true,

@@ -33,7 +33,21 @@ export async function POST(request: Request) {
       )
     }
 
-    // Update booking status to cancelled
+    // Get user's company
+    const { data: userRecord } = await supabase
+      .from('users')
+      .select('company_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!userRecord) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      )
+    }
+
+    // Update booking status to cancelled (scoped to company)
     const { data, error } = await supabase
       .from('bookings')
       .update({
@@ -42,6 +56,7 @@ export async function POST(request: Request) {
         cancellation_reason: reason.trim(),
       })
       .eq('id', bookingId)
+      .eq('company_id', userRecord.company_id)
       .in('status', ['pending_hold', 'confirmed']) // Can only cancel pending or confirmed bookings
       .select()
       .single()

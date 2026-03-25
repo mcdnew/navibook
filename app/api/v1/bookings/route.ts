@@ -21,55 +21,6 @@ function addHoursToTime(time: string, hours: number): string {
   return `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`
 }
 
-async function calculateCostsServerSide(
-  supabase: ReturnType<typeof createAdminClient>,
-  boatId: string,
-  companyId: string,
-  duration: string,
-  packageType: string,
-  passengers: number
-): Promise<{ fuel_cost: number; package_addon_cost: number }> {
-  const durationHours = parseDurationHours(duration as Duration)
-
-  // Fuel cost
-  let fuel_cost = 0
-  const { data: fuelConfig } = await supabase
-    .from('boat_fuel_config')
-    .select('fuel_consumption_rate, fuel_price_per_liter')
-    .eq('boat_id', boatId)
-    .single()
-
-  if (fuelConfig && durationHours > 0) {
-    fuel_cost = Math.round(fuelConfig.fuel_consumption_rate * durationHours * fuelConfig.fuel_price_per_liter * 100) / 100
-  }
-
-  // Package addon cost
-  let package_addon_cost = 0
-  if (packageType !== 'charter_only') {
-    const { data: pkgConfig } = await supabase
-      .from('company_package_config')
-      .select('drinks_cost_per_person, food_cost_per_person')
-      .eq('company_id', companyId)
-      .single()
-
-    if (pkgConfig) {
-      switch (packageType) {
-        case 'charter_drinks':
-          package_addon_cost = (pkgConfig.drinks_cost_per_person || 0) * passengers
-          break
-        case 'charter_food':
-          package_addon_cost = (pkgConfig.food_cost_per_person || 0) * passengers
-          break
-        case 'charter_full':
-          package_addon_cost = ((pkgConfig.drinks_cost_per_person || 0) + (pkgConfig.food_cost_per_person || 0)) * passengers
-          break
-      }
-      package_addon_cost = Math.round(package_addon_cost * 100) / 100
-    }
-  }
-
-  return { fuel_cost, package_addon_cost }
-}
 
 export async function POST(request: Request) {
   try {
@@ -155,13 +106,37 @@ export async function POST(request: Request) {
 
     const supabase = createAdminClient()
 
-    // Verify boat belongs to company and is active
-    const { data: boat, error: boatError } = await supabase
-      .from('boats')
-      .select('id, name, is_active')
-      .eq('id', boat_id)
-      .eq('company_id', companyId)
-      .single()
+    // Fetch boat, pricing, and cost configs in parallel
+    const [
+      { data: boat, error: boatError },
+      { data: pricingRow, error: pricingError },
+      { data: fuelConfig },
+      { data: pkgConfig },
+    ] = await Promise.all([
+      supabase
+        .from('boats')
+        .select('id, name, is_active')
+        .eq('id', boat_id)
+        .eq('company_id', companyId)
+        .single(),
+      supabase
+        .from('pricing')
+        .select('price')
+        .eq('boat_id', boat_id)
+        .eq('duration', duration)
+        .eq('package_type', package_type)
+        .single(),
+      supabase
+        .from('boat_fuel_config')
+        .select('fuel_consumption_rate, fuel_price_per_liter')
+        .eq('boat_id', boat_id)
+        .single(),
+      supabase
+        .from('company_package_config')
+        .select('drinks_cost_per_person, food_cost_per_person')
+        .eq('company_id', companyId)
+        .single(),
+    ])
 
     if (boatError || !boat) {
       return NextResponse.json({ error: 'Boat not found for this company' }, { status: 404 })
@@ -170,15 +145,6 @@ export async function POST(request: Request) {
     if (!boat.is_active) {
       return NextResponse.json({ error: 'Boat is not active' }, { status: 422 })
     }
-
-    // Lookup pricing
-    const { data: pricingRow, error: pricingError } = await supabase
-      .from('pricing')
-      .select('price')
-      .eq('boat_id', boat_id)
-      .eq('duration', duration)
-      .eq('package_type', package_type)
-      .single()
 
     if (pricingError || !pricingRow) {
       return NextResponse.json(
@@ -189,15 +155,28 @@ export async function POST(request: Request) {
 
     const totalPrice = pricingRow.price
 
-    // Calculate costs
-    const { fuel_cost, package_addon_cost } = await calculateCostsServerSide(
-      supabase,
-      boat_id,
-      companyId,
-      duration,
-      package_type,
-      passengersNum
-    )
+    // Calculate costs from the already-fetched configs
+    const durationHours = parseDurationHours(duration as Duration)
+    let fuel_cost = 0
+    if (fuelConfig && durationHours > 0) {
+      fuel_cost = Math.round(fuelConfig.fuel_consumption_rate * durationHours * fuelConfig.fuel_price_per_liter * 100) / 100
+    }
+
+    let package_addon_cost = 0
+    if (package_type !== 'charter_only' && pkgConfig) {
+      switch (package_type) {
+        case 'charter_drinks':
+          package_addon_cost = (pkgConfig.drinks_cost_per_person || 0) * passengersNum
+          break
+        case 'charter_food':
+          package_addon_cost = (pkgConfig.food_cost_per_person || 0) * passengersNum
+          break
+        case 'charter_full':
+          package_addon_cost = ((pkgConfig.drinks_cost_per_person || 0) + (pkgConfig.food_cost_per_person || 0)) * passengersNum
+          break
+      }
+      package_addon_cost = Math.round(package_addon_cost * 100) / 100
+    }
 
     const endTime = addHoursToTime(start_time, parseDurationHours(duration as Duration))
 

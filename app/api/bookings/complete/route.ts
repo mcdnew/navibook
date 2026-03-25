@@ -26,7 +26,21 @@ export async function POST(request: Request) {
       )
     }
 
-    // Update booking status to completed
+    // Get user's company
+    const { data: userRecord } = await supabase
+      .from('users')
+      .select('company_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!userRecord) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      )
+    }
+
+    // Update booking status to completed (scoped to company)
     const { data, error } = await supabase
       .from('bookings')
       .update({
@@ -34,6 +48,7 @@ export async function POST(request: Request) {
         completed_at: new Date().toISOString(),
       })
       .eq('id', bookingId)
+      .eq('company_id', userRecord.company_id)
       .eq('status', 'confirmed') // Only complete if currently confirmed
       .select()
       .single()

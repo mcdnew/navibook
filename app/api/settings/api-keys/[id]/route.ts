@@ -21,6 +21,65 @@ async function getAuthorizedUser() {
   return { userId: user.id, companyId: userData.company_id as string }
 }
 
+export async function PATCH(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const authorized = await getAuthorizedUser()
+    if (!authorized) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { id } = params
+    const body = await request.json()
+    const { webhook_url } = body
+
+    // Allow null/empty to clear the webhook
+    const normalizedUrl = webhook_url ? webhook_url.trim() : null
+
+    if (normalizedUrl) {
+      try {
+        const parsed = new URL(normalizedUrl)
+        if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+          return NextResponse.json({ error: 'webhook_url must be an http or https URL' }, { status: 400 })
+        }
+      } catch {
+        return NextResponse.json({ error: 'webhook_url must be a valid URL' }, { status: 400 })
+      }
+    }
+
+    const supabase = createAdminClient()
+
+    const { data: existing } = await supabase
+      .from('api_keys')
+      .select('id')
+      .eq('id', id)
+      .eq('company_id', authorized.companyId)
+      .single()
+
+    if (!existing) {
+      return NextResponse.json({ error: 'API key not found' }, { status: 404 })
+    }
+
+    const { data, error } = await supabase
+      .from('api_keys')
+      .update({ webhook_url: normalizedUrl })
+      .eq('id', id)
+      .select('id, name, key_prefix, is_active, created_at, last_used_at, webhook_url')
+      .single()
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ key: data })
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Internal server error'
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
+}
+
 export async function DELETE(
   _request: Request,
   { params }: { params: { id: string } }

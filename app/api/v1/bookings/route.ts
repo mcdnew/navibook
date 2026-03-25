@@ -247,10 +247,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to create booking' }, { status: 500 })
     }
 
-    // Update source to 'api'
+    // Tag booking with source and the API key that created it
     await supabase
       .from('bookings')
-      .update({ source: 'api' })
+      .update({ source: 'api', api_key_id: apiKeyResult.keyId })
       .eq('id', bookingId)
 
     return NextResponse.json(

@@ -32,7 +32,7 @@ export async function GET() {
     const supabase = createAdminClient()
     const { data, error } = await supabase
       .from('api_keys')
-      .select('id, name, key_prefix, is_active, created_at, last_used_at')
+      .select('id, name, key_prefix, is_active, created_at, last_used_at, webhook_url')
       .eq('company_id', authorized.companyId)
       .order('created_at', { ascending: false })
 
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
         key_prefix: keyPrefix,
         is_active: true,
       })
-      .select('id, name, key_prefix, is_active, created_at, last_used_at')
+      .select('id, name, key_prefix, is_active, created_at, last_used_at, webhook_url')
       .single()
 
     if (error) {

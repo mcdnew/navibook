@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { triggerWebhook } from '@/lib/webhooks'
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
@@ -82,6 +83,7 @@ export async function POST(request: Request) {
       )
     }
 
+    triggerWebhook(bookingId, 'booking.cancelled')
     return NextResponse.json({
       success: true,
       message: 'Booking cancelled successfully',

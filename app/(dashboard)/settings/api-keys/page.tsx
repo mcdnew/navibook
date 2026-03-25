@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { ArrowLeft, Copy, Check, Key, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft, Copy, Check, Key, Plus, Trash2, Webhook, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 
 interface ApiKey {
@@ -33,6 +33,7 @@ interface ApiKey {
   is_active: boolean
   created_at: string
   last_used_at: string | null
+  webhook_url: string | null
 }
 
 export default function ApiKeysPage() {
@@ -51,6 +52,12 @@ export default function ApiKeysPage() {
   // Revoke state
   const [revokeConfirmId, setRevokeConfirmId] = useState<string | null>(null)
   const [revoking, setRevoking] = useState(false)
+
+  // Webhook edit state
+  const [webhookEditId, setWebhookEditId] = useState<string | null>(null)
+  const [webhookUrl, setWebhookUrl] = useState('')
+  const [savingWebhook, setSavingWebhook] = useState(false)
+  const [webhookError, setWebhookError] = useState<string | null>(null)
 
   const fetchKeys = useCallback(async () => {
     try {
@@ -121,6 +128,33 @@ export default function ApiKeysPage() {
     } finally {
       setRevoking(false)
       setRevokeConfirmId(null)
+    }
+  }
+
+  function openWebhookEdit(key: ApiKey) {
+    setWebhookEditId(key.id)
+    setWebhookUrl(key.webhook_url ?? '')
+    setWebhookError(null)
+  }
+
+  async function handleSaveWebhook() {
+    if (!webhookEditId) return
+    setSavingWebhook(true)
+    setWebhookError(null)
+    try {
+      const res = await fetch(`/api/settings/api-keys/${webhookEditId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ webhook_url: webhookUrl || null }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to save webhook URL')
+      setKeys(prev => prev.map(k => k.id === webhookEditId ? { ...k, webhook_url: data.key.webhook_url } : k))
+      setWebhookEditId(null)
+    } catch (err: unknown) {
+      setWebhookError(err instanceof Error ? err.message : 'Failed to save')
+    } finally {
+      setSavingWebhook(false)
     }
   }
 
@@ -246,6 +280,7 @@ export default function ApiKeysPage() {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Key</TableHead>
+                    <TableHead>Webhook URL</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead>Last Used</TableHead>
                     <TableHead>Status</TableHead>
@@ -259,6 +294,16 @@ export default function ApiKeysPage() {
                       <TableCell className="font-mono text-xs text-muted-foreground">
                         {key.key_prefix}...
                       </TableCell>
+                      <TableCell className="max-w-[180px]">
+                        {key.webhook_url ? (
+                          <span className="text-xs text-muted-foreground truncate block" title={key.webhook_url}>
+                            {key.webhook_url.replace(/^https?:\/\//, '').substring(0, 30)}
+                            {key.webhook_url.replace(/^https?:\/\//, '').length > 30 ? '…' : ''}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground italic">Not set</span>
+                        )}
+                      </TableCell>
                       <TableCell>{formatDate(key.created_at)}</TableCell>
                       <TableCell>{formatDate(key.last_used_at)}</TableCell>
                       <TableCell>
@@ -270,9 +315,17 @@ export default function ApiKeysPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         {key.is_active && (
-                          <>
+                          <div className="flex gap-2 justify-end">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openWebhookEdit(key)}
+                            >
+                              <Webhook className="w-4 h-4 mr-1" />
+                              Webhook
+                            </Button>
                             {revokeConfirmId === key.id ? (
-                              <div className="flex gap-2 justify-end">
+                              <>
                                 <Button
                                   variant="destructive"
                                   size="sm"
@@ -288,7 +341,7 @@ export default function ApiKeysPage() {
                                 >
                                   Cancel
                                 </Button>
-                              </div>
+                              </>
                             ) : (
                               <Button
                                 variant="outline"
@@ -299,7 +352,7 @@ export default function ApiKeysPage() {
                                 Revoke
                               </Button>
                             )}
-                          </>
+                          </div>
                         )}
                       </TableCell>
                     </TableRow>
@@ -310,6 +363,50 @@ export default function ApiKeysPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Webhook edit dialog */}
+      <Dialog open={!!webhookEditId} onOpenChange={(open) => { if (!open) setWebhookEditId(null) }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Webhook className="w-5 h-5" />
+              Webhook URL
+            </DialogTitle>
+            <DialogDescription>
+              NaviBook will POST booking events to this URL when status changes. Leave blank to disable.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="webhook-url">Endpoint URL</Label>
+              <Input
+                id="webhook-url"
+                placeholder="https://yoursite.com/webhooks/navibook"
+                value={webhookUrl}
+                onChange={(e) => setWebhookUrl(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleSaveWebhook() }}
+              />
+            </div>
+            <div className="rounded-md bg-muted p-3 text-xs text-muted-foreground space-y-1">
+              <p className="font-medium text-foreground">Events delivered:</p>
+              <p><code>booking.confirmed</code> · <code>booking.cancelled</code> · <code>booking.completed</code> · <code>booking.no_show</code></p>
+              <p className="pt-1">Each request includes an <code>X-NaviBook-Signature: sha256=…</code> header for verification.</p>
+            </div>
+            {webhookError && (
+              <p className="text-sm text-destructive">{webhookError}</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setWebhookEditId(null)}>Cancel</Button>
+            {webhookUrl && (
+              <Button variant="ghost" onClick={() => setWebhookUrl('')}>Clear</Button>
+            )}
+            <Button onClick={handleSaveWebhook} disabled={savingWebhook}>
+              {savingWebhook ? 'Saving...' : 'Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

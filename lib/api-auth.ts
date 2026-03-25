@@ -40,8 +40,10 @@ export async function validateApiKey(request: Request): Promise<ApiKeyResult | n
   if (error || !data) return null
   if (!data.is_active) return { revoked: true }
 
-  // Fire-and-forget last_used_at update
-  supabase.from('api_keys').update({ last_used_at: new Date().toISOString() }).eq('id', data.id)
+  // Update last_used_at in background (don't await to avoid blocking response)
+  supabase.from('api_keys').update({ last_used_at: new Date().toISOString() }).eq('id', data.id).catch(() => {
+    // Silently fail if update fails, don't block the request
+  })
 
   return { companyId: data.company_id, keyId: data.id, revoked: false }
 }

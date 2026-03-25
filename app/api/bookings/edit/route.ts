@@ -81,11 +81,12 @@ export async function POST(request: Request) {
     // Check if user can modify captain/sailor assignments
     const canModifyCrew = ['admin', 'operations_manager', 'office_staff'].includes(userRecord.role)
 
-    // Get current booking to check capacity
+    // Get current booking to check capacity (scoped to company)
     const { data: currentBooking, error: fetchError } = await supabase
       .from('bookings')
       .select('*, boats(capacity)')
       .eq('id', bookingId)
+      .eq('company_id', userRecord.company_id)
       .single()
 
     if (fetchError || !currentBooking) {

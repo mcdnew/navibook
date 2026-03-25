@@ -12,6 +12,7 @@ import {
   deleteByNamePrefix,
 } from './helpers/supabase'
 import { generateApiKey } from '../../lib/api-keys'
+import { signWebhookPayload } from '../../lib/webhooks'
 
 let companyId: string
 let boatId: string
@@ -433,6 +434,34 @@ describe('External API v1', () => {
 
       // Will return 404 because the booking doesn't exist in this company
       expect(res.status).toBe(404)
+    })
+  })
+
+  describe('Webhook signature (signWebhookPayload)', () => {
+    it('produces sha256= prefixed HMAC', () => {
+      const sig = signWebhookPayload('mysecret', '{"hello":"world"}')
+      expect(sig).toMatch(/^sha256=[0-9a-f]{64}$/)
+    })
+
+    it('same inputs produce same signature', () => {
+      const body = '{"event":"booking.confirmed"}'
+      const sig1 = signWebhookPayload('secret123', body)
+      const sig2 = signWebhookPayload('secret123', body)
+      expect(sig1).toBe(sig2)
+    })
+
+    it('different secrets produce different signatures', () => {
+      const body = '{"event":"booking.confirmed"}'
+      const sig1 = signWebhookPayload('secret-a', body)
+      const sig2 = signWebhookPayload('secret-b', body)
+      expect(sig1).not.toBe(sig2)
+    })
+
+    it('different bodies produce different signatures', () => {
+      const secret = 'same-secret'
+      const sig1 = signWebhookPayload(secret, '{"event":"booking.confirmed"}')
+      const sig2 = signWebhookPayload(secret, '{"event":"booking.cancelled"}')
+      expect(sig1).not.toBe(sig2)
     })
   })
 })

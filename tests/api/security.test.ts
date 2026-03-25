@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { createApiClient, TEST_PREFIX, ApiClient } from './helpers/client'
+import { createApiClient, TEST_PREFIX, TEST_BASE_PREFIX, ApiClient } from './helpers/client'
 import {
   adminSupabase,
   getDemoCompanyId,
@@ -27,7 +27,7 @@ async function createTestBooking(
 ): Promise<string> {
   bookingOffset += 1
   const d = new Date()
-  d.setDate(d.getDate() + 60 + bookingOffset)
+  d.setDate(d.getDate() + 80 + bookingOffset)
   const dateStr = d.toISOString().split('T')[0]
 
   const { data, error } = await adminSupabase
@@ -58,6 +58,9 @@ beforeAll(async () => {
   companyId = await getDemoCompanyId()
   const boat = await getFirstBoat()
   boatId = boat.id
+
+  // Cancel ALL test bookings from any run (prevents no_overlap conflicts from stale data)
+  await deleteByNamePrefix('bookings', 'customer_name', TEST_BASE_PREFIX)
 
   // Create a test booking belonging to the demo company
   victimBookingId = await createTestBooking(`${TEST_PREFIX} Victim Booking`, 'confirmed')

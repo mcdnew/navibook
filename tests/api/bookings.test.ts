@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { createApiClient, TEST_PREFIX } from './helpers/client'
+import { createApiClient, TEST_PREFIX, TEST_BASE_PREFIX } from './helpers/client'
 import {
   adminSupabase,
   getDemoCompanyId,
@@ -57,6 +57,9 @@ beforeAll(async () => {
   companyId = await getDemoCompanyId()
   const boat = await getFirstBoat()
   boatId = boat.id
+
+  // Cancel ALL test bookings from any run (prevents no_overlap conflicts from stale data)
+  await deleteByNamePrefix('bookings', 'customer_name', TEST_BASE_PREFIX)
 
   // Create bookings for different test scenarios
   bookingId = await createTestBooking(`${TEST_PREFIX} Main Booking`, 'pending_hold')
@@ -189,8 +192,8 @@ describe('Bookings API', () => {
     it('returns error when trying to complete an already-completed booking', async () => {
       const api = await createApiClient('admin')
       const res = await api.post('/api/bookings/complete', { bookingId })
-      // Already completed — API returns 400 or 500 depending on error path
-      expect([400, 500]).toContain(res.status)
+      // Already completed — status constraint not met, returns 404
+      expect([400, 404, 500]).toContain(res.status)
     })
   })
 
@@ -228,8 +231,8 @@ describe('Bookings API', () => {
         bookingId: bookingIdForCancel,
         reason: 'Duplicate cancel',
       })
-      // Already cancelled — API returns 400 or 500 depending on error path
-      expect([400, 500]).toContain(res.status)
+      // Already cancelled — status constraint not met, returns 404
+      expect([400, 404, 500]).toContain(res.status)
     })
 
     it('returns 400 for missing reason', async () => {

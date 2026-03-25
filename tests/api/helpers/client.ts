@@ -17,6 +17,8 @@ const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 // Unique prefix for all test data created in this run
 export const runId = Date.now()
 export const TEST_PREFIX = `[TEST-${runId}]`
+// Broader prefix matching ALL test runs (for pre-run cleanup of stale data)
+export const TEST_BASE_PREFIX = '[TEST-'
 
 // ── Auth ───────────────────────────────────────────────────────────────────────
 

@@ -104,11 +104,12 @@ export async function POST(request: Request) {
 
       if (payments && payments.length > 0) {
         const latestPayment = payments[0]
-        const totalPaid = await supabase
+        const { data: paymentData } = await supabase
           .from('payment_transactions')
           .select('amount')
           .eq('booking_id', bookingId)
-          .then(({ data }) => data?.reduce((sum, p) => sum + p.amount, 0) || 0)
+
+        const totalPaid = paymentData?.reduce((sum, p) => sum + p.amount, 0) || 0
 
         emailTemplate = getPaymentReceivedEmail({
           customerName: booking.customer_name,

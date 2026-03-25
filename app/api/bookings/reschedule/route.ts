@@ -26,11 +26,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get the current booking
+    // Get user's company
+    const { data: userRecord } = await supabase
+      .from('users')
+      .select('company_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!userRecord) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    // Get the current booking (scoped to company)
     const { data: currentBooking, error: fetchError } = await supabase
       .from('bookings')
       .select('*, boats(name, capacity)')
       .eq('id', bookingId)
+      .eq('company_id', userRecord.company_id)
       .single()
 
     if (fetchError || !currentBooking) {

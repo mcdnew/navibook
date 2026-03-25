@@ -54,6 +54,12 @@ export async function POST(request: Request) {
       .single()
 
     if (error) {
+      if (error.code === 'PGRST116') {
+        return NextResponse.json(
+          { error: 'Booking not found or not accessible' },
+          { status: 404 }
+        )
+      }
       console.error('Complete booking error:', error)
       return NextResponse.json(
         { error: error.message || 'Failed to mark booking as completed' },

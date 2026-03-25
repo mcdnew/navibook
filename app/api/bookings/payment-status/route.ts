@@ -33,11 +33,26 @@ export async function POST(request: Request) {
       )
     }
 
-    // Update booking payment status
+    // Get user's company
+    const { data: userRecord } = await supabase
+      .from('users')
+      .select('company_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!userRecord) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      )
+    }
+
+    // Update booking payment status (scoped to company)
     const { data, error } = await supabase
       .from('bookings')
       .update({ deposit_paid: depositPaid })
       .eq('id', bookingId)
+      .eq('company_id', userRecord.company_id)
       .select()
       .single()
 

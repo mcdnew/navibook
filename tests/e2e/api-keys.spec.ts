@@ -64,9 +64,9 @@ test.describe('API Keys Settings', () => {
     await page.getByRole('button', { name: /done/i }).click()
 
     // The key name should appear in the table
-    await expect(page.getByRole('cell', { name: 'E2E Visible Key' })).toBeVisible({ timeout: 8000 })
+    await expect(page.getByRole('cell', { name: 'E2E Visible Key' }).first()).toBeVisible({ timeout: 8000 })
     // And it should have an Active badge
-    const row = page.getByRole('row').filter({ hasText: 'E2E Visible Key' })
+    const row = page.getByRole('row').filter({ hasText: 'E2E Visible Key' }).first()
     await expect(row.getByText('Active')).toBeVisible()
   })
 
@@ -98,7 +98,7 @@ test.describe('API Keys Settings', () => {
       // Dialog should close on success
       await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 8000 })
       // URL should appear (truncated) in the table
-      await expect(page.getByText(/example\.com/)).toBeVisible({ timeout: 5000 })
+      await expect(page.getByText(/example\.com/).first()).toBeVisible({ timeout: 5000 })
     }
   })
 
@@ -111,7 +111,7 @@ test.describe('API Keys Settings', () => {
     await page.getByRole('button', { name: /done/i }).click()
 
     // Find the row and click Revoke
-    const row = page.getByRole('row').filter({ hasText: 'E2E Revoke Me' })
+    const row = page.getByRole('row').filter({ hasText: 'E2E Revoke Me' }).first()
     await row.getByRole('button', { name: /revoke/i }).click()
     // Confirm button should appear
     await row.getByRole('button', { name: /confirm/i }).click()

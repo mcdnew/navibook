@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Edit, Trash2, Plus, User, Settings2, AlertCircle, CheckCircle } from 'lucide-react'
+import { Edit, Trash2, Plus, User, Settings2, AlertCircle, CheckCircle, Wrench } from 'lucide-react'
 import BoatDialog from './boat-dialog'
 import {
   Dialog,
@@ -16,12 +16,14 @@ import {
 } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import BoatFuelConfig from '@/app/components/boats/boat-fuel-config'
+import Link from 'next/link'
 
 interface FleetManagementClientProps {
   boats: any[]
+  fleetModuleEnabled?: boolean
 }
 
-export default function FleetManagementClient({ boats }: FleetManagementClientProps) {
+export default function FleetManagementClient({ boats, fleetModuleEnabled = false }: FleetManagementClientProps) {
   const router = useRouter()
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
@@ -229,6 +231,19 @@ export default function FleetManagementClient({ boats }: FleetManagementClientPr
               )}
 
               <div className="flex gap-2 pt-3 border-t flex-wrap">
+                {fleetModuleEnabled && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    asChild
+                    className="flex-1 min-w-[80px] text-blue-600 hover:bg-blue-50 border-blue-200"
+                  >
+                    <Link href={`/fleet/boats/${boat.id}`}>
+                      <Wrench className="w-4 h-4 mr-1" />
+                      Fleet Ops
+                    </Link>
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="sm"

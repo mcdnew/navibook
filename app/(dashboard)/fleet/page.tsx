@@ -13,17 +13,32 @@ export default async function FleetPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: boats } = await supabase
-    .from('boats')
-    .select(`
-      *,
-      default_captain:users!boats_default_captain_id_fkey(
-        id,
-        first_name,
-        last_name
-      )
-    `)
-    .order('name')
+  const { data: userRecord } = await supabase
+    .from('users')
+    .select('company_id')
+    .eq('id', user.id)
+    .single()
+
+  const [{ data: boats }, { data: company }] = await Promise.all([
+    supabase
+      .from('boats')
+      .select(`
+        *,
+        default_captain:users!boats_default_captain_id_fkey(
+          id,
+          first_name,
+          last_name
+        )
+      `)
+      .order('name'),
+    supabase
+      .from('companies')
+      .select('fleet_module_enabled')
+      .eq('id', userRecord?.company_id ?? '')
+      .single(),
+  ])
+
+  const fleetModuleEnabled = company?.fleet_module_enabled ?? false
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-8">
@@ -66,7 +81,7 @@ export default async function FleetPage() {
           </CardContent>
         </Card>
 
-        <FleetManagementClient boats={boats || []} />
+        <FleetManagementClient boats={boats || []} fleetModuleEnabled={fleetModuleEnabled} />
       </div>
     </div>
   )

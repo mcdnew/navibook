@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { Calendar, BarChart3, Shield, Zap, Users, Anchor } from 'lucide-react'
 
+// NaviBook landing page
 export default async function Home() {
   const supabase = await createClient()
 

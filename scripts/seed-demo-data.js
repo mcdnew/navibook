@@ -261,8 +261,8 @@ const PRICING = {
 
 // Package costs per person
 const PACKAGE_COSTS = {
-  drinks_cost_per_person: 22,
-  food_cost_per_person: 35,
+  drinks_cost_per_person: 2,
+  food_cost_per_person: 3,
 }
 
 // ─────────────────────────────────────────────

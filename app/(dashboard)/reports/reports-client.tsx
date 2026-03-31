@@ -27,7 +27,7 @@ const AnalyticsCharts = dynamic(() => import('@/app/components/reports/analytics
   loading: () => <div className="h-[300px] flex items-center justify-center text-sm text-muted-foreground">Loading charts...</div>,
 })
 
-export default function ReportsClient({ bookings }: ReportsClientProps) {
+export default function ReportsClient({ bookings, fleetExpenses = [], maintenanceLogs = [] }: ReportsClientProps) {
   const {
     dateFrom, dateTo, setDateFrom, setDateTo,
     applyPresetRange, handleExport,
@@ -38,7 +38,7 @@ export default function ReportsClient({ bookings }: ReportsClientProps) {
     revenueByBookingCategory, fuelCostAnalysis,
     profitabilityByCategory, costComposition, revenueCostsTrend,
     PRESET_RANGES, COLORS,
-  } = useReportsData(bookings)
+  } = useReportsData(bookings, fleetExpenses, maintenanceLogs)
 
   return (
     <div className="space-y-6">
@@ -274,6 +274,24 @@ export default function ReportsClient({ bookings }: ReportsClientProps) {
                 <p className="text-xl font-bold text-teal-600">€{revenueData.totalCommissions.toFixed(2)}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   {((revenueData.totalCommissions / revenueData.totalCosts) * 100).toFixed(1)}% of costs
+                </p>
+              </div>
+            )}
+            {revenueData.totalMaintenanceCosts > 0 && (
+              <div className="p-4 border rounded-lg bg-pink-50 dark:bg-pink-950/20">
+                <p className="text-xs font-medium text-muted-foreground">Maintenance Costs</p>
+                <p className="text-xl font-bold text-pink-600">€{revenueData.totalMaintenanceCosts.toFixed(2)}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {((revenueData.totalMaintenanceCosts / revenueData.totalCosts) * 100).toFixed(1)}% of costs
+                </p>
+              </div>
+            )}
+            {revenueData.totalFleetExpenses > 0 && (
+              <div className="p-4 border rounded-lg bg-amber-50 dark:bg-amber-950/20">
+                <p className="text-xs font-medium text-muted-foreground">Fleet Expenses</p>
+                <p className="text-xl font-bold text-amber-600">€{revenueData.totalFleetExpenses.toFixed(2)}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {((revenueData.totalFleetExpenses / revenueData.totalCosts) * 100).toFixed(1)}% of costs
                 </p>
               </div>
             )}

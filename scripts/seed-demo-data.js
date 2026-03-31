@@ -583,7 +583,6 @@ async function main() {
         for (const [duration, packages] of Object.entries(durations)) {
           for (const [pkgName, price] of Object.entries(packages)) {
             await supabase.from('pricing').insert([{
-              company_id: companyId,
               boat_id: boatId,
               duration: duration,
               package_type: pkgName,
@@ -601,7 +600,7 @@ async function main() {
     const sailboatNames = ['El más Inquieto']
     const motorboatNames = ['Viento Libre', 'Costa Rápida']
     const jetskiNames = ['Trueno Azul', 'Rayo del Mar', 'Ola de Fuego', 'Espuma Salvaje']
-    const paymentMethods = ['card', 'bank_transfer', 'cash', 'check']
+    const paymentMethods = ['card', 'bank_transfer', 'cash', 'other']
     const sources = ['direct', 'website', 'airbnb', 'viator', 'tripadvisor']
 
     const allBookingNames = Object.keys(boatMap)
@@ -723,8 +722,7 @@ async function main() {
               payment_type: 'deposit',
               amount: depositAmount,
               payment_method: depositMethod,
-              transaction_date: bookingDate,
-              status: 'completed',
+              payment_date: bookingDate,
             },
             {
               company_id: companyId,
@@ -732,8 +730,7 @@ async function main() {
               payment_type: 'final_payment',
               amount: totalPrice - depositAmount,
               payment_method: randomFromArray(paymentMethods),
-              transaction_date: bookingDate,
-              status: 'completed',
+              payment_date: bookingDate,
             },
           ])
         }
@@ -853,8 +850,7 @@ async function main() {
               payment_type: 'deposit',
               amount: depositAmount,
               payment_method: depositMethod,
-              transaction_date: bookingDate,
-              status: 'pending',
+              payment_date: bookingDate,
             },
           ])
         }
@@ -974,8 +970,7 @@ async function main() {
               payment_type: 'deposit',
               amount: depositAmount,
               payment_method: depositMethod,
-              transaction_date: bookingDate,
-              status: 'completed',
+              payment_date: bookingDate,
             },
             {
               company_id: companyId,
@@ -983,8 +978,7 @@ async function main() {
               payment_type: 'final_payment',
               amount: totalPrice - depositAmount,
               payment_method: randomFromArray(paymentMethods),
-              transaction_date: bookingDate,
-              status: 'completed',
+              payment_date: bookingDate,
             },
           ])
         } else if (status === 'confirmed') {
@@ -995,8 +989,7 @@ async function main() {
               payment_type: 'deposit',
               amount: depositAmount,
               payment_method: randomFromArray(paymentMethods),
-              transaction_date: bookingDate,
-              status: 'pending',
+              payment_date: bookingDate,
             },
           ])
         }

@@ -25,8 +25,25 @@ export type Booking = {
   discount_percentage?: number
 }
 
+export type FleetExpense = {
+  id: string
+  amount: number
+  boat_id: string
+  expense_date: string
+  category: string
+}
+
+export type MaintenanceLog = {
+  id: string
+  actual_cost: number | null
+  boat_id: string
+  completed_date: string | null
+}
+
 export type ReportsClientProps = {
   bookings: Booking[]
+  fleetExpenses?: FleetExpense[]
+  maintenanceLogs?: MaintenanceLog[]
 }
 
 export const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d']
@@ -41,7 +58,7 @@ export const PRESET_RANGES = [
   { label: 'This Year', value: 'thisYear' },
 ]
 
-export function useReportsData(bookings: Booking[]) {
+export function useReportsData(bookings: Booking[], fleetExpenses: FleetExpense[] = [], maintenanceLogs: MaintenanceLog[] = []) {
   const [dateFrom, setDateFrom] = useState<Date>(subDays(new Date(), 30))
   const [dateTo, setDateTo] = useState<Date>(new Date())
 
@@ -95,7 +112,7 @@ export function useReportsData(bookings: Booking[]) {
     const totalRevenue = confirmed.reduce((sum, b) => sum + b.total_price, 0)
     const avgBookingValue = confirmed.length > 0 ? totalRevenue / confirmed.length : 0
 
-    // Cost breakdown
+    // Booking-related cost breakdown
     const totalCaptainCosts = confirmed.reduce((sum, b) => sum + (b.captain_fee || 0), 0)
     const totalSailorCosts = confirmed.reduce((sum, b) => sum + (b.sailor_fee || 0), 0)
     const totalFuelCosts = confirmed.reduce((sum, b) => sum + (b.fuel_cost || 0), 0)
@@ -104,7 +121,23 @@ export function useReportsData(bookings: Booking[]) {
       if (!b.agents || !b.agent_id) return sum
       return sum + (b.total_price * b.agents.commission_percentage) / 100
     }, 0)
-    const totalCosts = totalCaptainCosts + totalSailorCosts + totalFuelCosts + totalPackageAddonCosts + totalCommissions
+
+    // Fleet operational costs (maintenance + expenses)
+    const filteredExpenses = fleetExpenses.filter(e => {
+      const expenseDate = new Date(e.expense_date)
+      return expenseDate >= dateFrom && expenseDate <= dateTo
+    })
+    const totalFleetExpenses = filteredExpenses.reduce((sum, e) => sum + e.amount, 0)
+
+    const filteredMaintenance = maintenanceLogs.filter(m => {
+      if (!m.completed_date) return false
+      const completedDate = new Date(m.completed_date)
+      return completedDate >= dateFrom && completedDate <= dateTo
+    })
+    const totalMaintenanceCosts = filteredMaintenance.reduce((sum, m) => sum + (m.actual_cost || 0), 0)
+
+    const totalOperationalCosts = totalFleetExpenses + totalMaintenanceCosts
+    const totalCosts = totalCaptainCosts + totalSailorCosts + totalFuelCosts + totalPackageAddonCosts + totalCommissions + totalOperationalCosts
 
     // Profit analysis
     const netProfit = totalRevenue - totalCosts
@@ -119,11 +152,14 @@ export function useReportsData(bookings: Booking[]) {
       totalFuelCosts,
       totalPackageAddonCosts,
       totalCommissions,
+      totalFleetExpenses,
+      totalMaintenanceCosts,
+      totalOperationalCosts,
       totalCosts,
       netProfit,
       profitMargin
     }
-  }, [filteredBookings])
+  }, [filteredBookings, fleetExpenses, maintenanceLogs, dateFrom, dateTo])
 
   // Daily revenue chart data
   const dailyRevenueData = useMemo(() => {
@@ -419,6 +455,12 @@ export function useReportsData(bookings: Booking[]) {
     }
     if (revenueData.totalCommissions > 0) {
       data.push({ name: 'Agent Commissions', value: revenueData.totalCommissions, color: '#00C49F' })
+    }
+    if (revenueData.totalMaintenanceCosts > 0) {
+      data.push({ name: 'Maintenance Costs', value: revenueData.totalMaintenanceCosts, color: '#EC4899' })
+    }
+    if (revenueData.totalFleetExpenses > 0) {
+      data.push({ name: 'Fleet Expenses', value: revenueData.totalFleetExpenses, color: '#F97316' })
     }
     if (revenueData.netProfit > 0) {
       data.push({ name: 'Net Profit', value: revenueData.netProfit, color: '#0088FE' })

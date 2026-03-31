@@ -37,6 +37,19 @@ export default async function ReportsPage() {
     .neq('status', 'cancelled')
     .order('booking_date', { ascending: false })
 
+  // Get fleet operational costs
+  const { data: fleetExpenses } = await supabase
+    .from('fleet_expenses')
+    .select('id, amount, boat_id, expense_date, category')
+    .eq('company_id', userRecord.company_id)
+
+  const { data: maintenanceLogs } = await supabase
+    .from('maintenance_logs')
+    .select('id, actual_cost, boat_id, completed_date')
+    .eq('company_id', userRecord.company_id)
+    .eq('status', 'completed')
+    .not('actual_cost', 'is', null)
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -53,7 +66,11 @@ export default async function ReportsPage() {
           </div>
         </div>
 
-        <ReportsClient bookings={bookings || []} />
+        <ReportsClient
+          bookings={bookings || []}
+          fleetExpenses={fleetExpenses || []}
+          maintenanceLogs={maintenanceLogs || []}
+        />
       </div>
     </div>
   )

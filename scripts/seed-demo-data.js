@@ -1128,83 +1128,124 @@ async function main() {
     // 15b: Maintenance logs (2-3 past + 1-2 future per boat)
     console.log('   Creating maintenance logs...')
     const maintenanceVendors = ['Náutica Costa del Sol', 'MarineService Estepona', 'Taller Naval Málaga']
+    const adminUserId = userMap[PRESERVED_ADMIN_EMAIL] || '4cd3aae8-d6cd-456c-8b85-c7f26e57f4e4'
 
     for (const boat of DEMO_BOATS) {
       const boatId = boatMap[boat.name]
 
       if (boat.type === 'sailboat') {
         // Annual rig inspection (past)
+        if (!boatId) {
+          console.error(`   ERROR: boatId is null for boat ${boat.name}`)
+          return
+        }
         await supabase.from('maintenance_logs').insert([{
           company_id: companyId,
           boat_id: boatId,
-          maintenance_date: dateStr(-120),
-          description: 'Annual rig inspection',
-          maintenance_type: 'preventive',
+          created_by_user_id: adminUserId,
+          title: 'Annual rig inspection',
+          description: 'Complete rig inspection and maintenance',
+          type: 'inspection',
+          category: 'rigging',
+          maintenance_type: 'preventative',
+          scheduled_date: dateStr(-120),
+          completed_date: dateStr(-120),
           status: 'completed',
           actual_cost: 450,
           parts_cost: 150,
           labor_cost: 300,
-          vendor: randomFromArray(maintenanceVendors),
+          vendor_name: randomFromArray(maintenanceVendors),
+          priority: 'normal',
         }])
         // Engine service (past)
         await supabase.from('maintenance_logs').insert([{
           company_id: companyId,
           boat_id: boatId,
-          maintenance_date: dateStr(-60),
-          description: 'Engine service',
-          maintenance_type: 'preventive',
+          created_by_user_id: adminUserId,
+          title: 'Engine service',
+          description: 'Regular engine maintenance and oil change',
+          type: 'routine',
+          category: 'engine',
+          maintenance_type: 'preventative',
+          scheduled_date: dateStr(-60),
+          completed_date: dateStr(-60),
           status: 'completed',
           actual_cost: 650,
           parts_cost: 350,
           labor_cost: 300,
-          vendor: randomFromArray(maintenanceVendors),
+          vendor_name: randomFromArray(maintenanceVendors),
+          priority: 'normal',
         }])
         // Anti-fouling paint (upcoming)
         await supabase.from('maintenance_logs').insert([{
           company_id: companyId,
           boat_id: boatId,
-          maintenance_date: dateStr(20),
-          description: 'Anti-fouling paint',
-          maintenance_type: 'preventive',
+          created_by_user_id: adminUserId,
+          title: 'Anti-fouling paint',
+          description: 'Hull anti-fouling paint reapplication',
+          type: 'upgrade',
+          category: 'hull',
+          maintenance_type: 'preventative',
+          scheduled_date: dateStr(20),
           status: 'scheduled',
-          vendor: randomFromArray(maintenanceVendors),
+          estimated_cost: 800,
+          vendor_name: randomFromArray(maintenanceVendors),
+          priority: 'normal',
         }])
       } else if (boat.type === 'motorboat') {
         // Engine service (past)
         await supabase.from('maintenance_logs').insert([{
           company_id: companyId,
           boat_id: boatId,
-          maintenance_date: dateStr(-90),
-          description: 'Engine service',
-          maintenance_type: 'preventive',
+          created_by_user_id: adminUserId,
+          title: 'Engine service',
+          description: 'Engine oil and filter change',
+          type: 'routine',
+          category: 'engine',
+          maintenance_type: 'preventative',
+          scheduled_date: dateStr(-90),
+          completed_date: dateStr(-90),
           status: 'completed',
           actual_cost: 520,
           parts_cost: 280,
           labor_cost: 240,
-          vendor: randomFromArray(maintenanceVendors),
+          vendor_name: randomFromArray(maintenanceVendors),
+          priority: 'normal',
         }])
         // Hull cleaning (past)
         await supabase.from('maintenance_logs').insert([{
           company_id: companyId,
           boat_id: boatId,
-          maintenance_date: dateStr(-45),
-          description: 'Hull cleaning',
-          maintenance_type: 'routine',
+          created_by_user_id: adminUserId,
+          title: 'Hull cleaning',
+          description: 'Professional hull cleaning and inspection',
+          type: 'routine',
+          category: 'hull',
+          maintenance_type: 'preventative',
+          scheduled_date: dateStr(-45),
+          completed_date: dateStr(-45),
           status: 'completed',
           actual_cost: 280,
           parts_cost: 0,
           labor_cost: 280,
-          vendor: randomFromArray(maintenanceVendors),
+          vendor_name: randomFromArray(maintenanceVendors),
+          priority: 'normal',
         }])
         // Annual inspection (upcoming)
         await supabase.from('maintenance_logs').insert([{
           company_id: companyId,
           boat_id: boatId,
-          maintenance_date: dateStr(25),
-          description: 'Annual inspection',
-          maintenance_type: 'preventive',
+          created_by_user_id: adminUserId,
+          title: 'Annual inspection',
+          description: 'Mandatory annual safety inspection',
+          type: 'inspection',
+          category: 'safety_equipment',
+          maintenance_type: 'preventative',
+          scheduled_date: dateStr(25),
           status: 'scheduled',
-          vendor: randomFromArray(maintenanceVendors),
+          estimated_cost: 600,
+          vendor_name: randomFromArray(maintenanceVendors),
+          priority: 'high',
         }])
       } else {
         // Jetski
@@ -1212,24 +1253,36 @@ async function main() {
         await supabase.from('maintenance_logs').insert([{
           company_id: companyId,
           boat_id: boatId,
-          maintenance_date: dateStr(-75),
-          description: 'Season service',
-          maintenance_type: 'preventive',
+          created_by_user_id: adminUserId,
+          title: 'Season service',
+          description: 'Pre-season maintenance and setup',
+          type: 'routine',
+          category: 'engine',
+          maintenance_type: 'preventative',
+          scheduled_date: dateStr(-75),
+          completed_date: dateStr(-75),
           status: 'completed',
           actual_cost: 320,
           parts_cost: 160,
           labor_cost: 160,
-          vendor: randomFromArray(maintenanceVendors),
+          vendor_name: randomFromArray(maintenanceVendors),
+          priority: 'normal',
         }])
         // Hull inspection (upcoming)
         await supabase.from('maintenance_logs').insert([{
           company_id: companyId,
           boat_id: boatId,
-          maintenance_date: dateStr(45),
-          description: 'Hull inspection',
-          maintenance_type: 'preventive',
+          created_by_user_id: adminUserId,
+          title: 'Hull inspection',
+          description: 'Pre-season hull inspection',
+          type: 'inspection',
+          category: 'hull',
+          maintenance_type: 'preventative',
+          scheduled_date: dateStr(45),
           status: 'scheduled',
-          vendor: randomFromArray(maintenanceVendors),
+          estimated_cost: 250,
+          vendor_name: randomFromArray(maintenanceVendors),
+          priority: 'normal',
         }])
       }
       console.log(`   Maintenance logs for ${boat.name}: created`)
@@ -1247,11 +1300,12 @@ async function main() {
         await supabase.from('fleet_expenses').insert([{
           company_id: companyId,
           boat_id: boatId,
+          created_by_user_id: adminUserId,
           expense_date: dateStr(randomRange(-180, -1)),
           category: 'insurance',
-          description: `Insurance premium - Q${q + 1}`,
+          description: `Insurance premium - Q${q + 1} - Seguros Marinos Estepona`,
           amount: quarterlyInsurance,
-          vendor: 'Seguros Marinos Estepona',
+          status: 'approved',
         }])
       }
 
@@ -1260,24 +1314,28 @@ async function main() {
         await supabase.from('fleet_expenses').insert([{
           company_id: companyId,
           boat_id: boatId,
+          created_by_user_id: adminUserId,
           expense_date: dateStr(randomRange(-180, -1)),
           category: 'mooring',
-          description: 'Monthly mooring fee',
+          description: 'Monthly mooring fee - Puerto Deportivo de Estepona',
           amount: randomRange(350, 500),
-          vendor: 'Puerto Deportivo de Estepona',
+          status: 'approved',
         }])
       }
 
       // Equipment & supplies
       for (let i = 0; i < 2; i++) {
+        const supplier = randomFromArray(['Náutica Costa del Sol', 'MarineService Estepona', 'Local supplier'])
+        const item = randomFromArray(['Rope & rigging', 'Fenders & bumpers', 'Cleaning supplies', 'Safety gear', 'Engine filters'])
         await supabase.from('fleet_expenses').insert([{
           company_id: companyId,
           boat_id: boatId,
+          created_by_user_id: adminUserId,
           expense_date: dateStr(randomRange(-180, -1)),
           category: randomFromArray(['equipment', 'supplies']),
-          description: randomFromArray(['Rope & rigging', 'Fenders & bumpers', 'Cleaning supplies', 'Safety gear', 'Engine filters']),
+          description: `${item} - ${supplier}`,
           amount: randomRange(80, 250),
-          vendor: randomFromArray(['Náutica Costa del Sol', 'MarineService Estepona', 'Local supplier']),
+          status: 'approved',
         }])
       }
       console.log(`   Expenses for ${boat.name}: created`)
@@ -1292,36 +1350,43 @@ async function main() {
       await supabase.from('safety_equipment').insert([{
         company_id: companyId,
         boat_id: boatId,
-        equipment_type: 'life_jacket',
+        added_by_user_id: adminUserId,
+        name: `Adult life jackets (${boat.capacity} units)`,
+        category: 'life_jacket',
         quantity: boat.capacity,
-        last_inspected: dateStr(-30),
+        last_checked: dateStr(-30),
         expiry_date: dateStr(180),
-        status: 'serviceable',
-        notes: `${boat.capacity} adult life jackets`,
+        status: 'active',
+        notes: `${boat.capacity} adult life jackets, certified`,
       }])
 
       // Fire extinguisher(s)
       await supabase.from('safety_equipment').insert([{
         company_id: companyId,
         boat_id: boatId,
-        equipment_type: 'fire_extinguisher',
+        added_by_user_id: adminUserId,
+        name: `CO2 fire extinguishers (${boat.type === 'sailboat' ? 2 : 1} units)`,
+        category: 'fire_extinguisher',
         quantity: boat.type === 'sailboat' ? 2 : 1,
-        last_inspected: dateStr(-45),
+        last_checked: dateStr(-45),
         expiry_date: dateStr(365),
-        status: 'serviceable',
+        status: 'active',
         notes: 'CO2 fire extinguishers, certified',
       }])
 
       // Flares
       if (boat.type !== 'jetski') {
+        const flareQty = randomRange(3, 4)
         await supabase.from('safety_equipment').insert([{
           company_id: companyId,
           boat_id: boatId,
-          equipment_type: 'flares',
-          quantity: randomRange(3, 4),
-          last_inspected: dateStr(-60),
+          added_by_user_id: adminUserId,
+          name: `Flares (${flareQty} units)`,
+          category: 'flare',
+          quantity: flareQty,
+          last_checked: dateStr(-60),
           expiry_date: dateStr(randomRange(100, 200)),
-          status: 'serviceable',
+          status: 'active',
           notes: 'Parachute flares and handheld flares',
         }])
 
@@ -1329,11 +1394,13 @@ async function main() {
         await supabase.from('safety_equipment').insert([{
           company_id: companyId,
           boat_id: boatId,
-          equipment_type: 'epirb',
+          added_by_user_id: adminUserId,
+          name: 'Emergency Position Indicating Radio Beacon (EPIRB)',
+          category: 'epirb',
           quantity: 1,
-          last_inspected: dateStr(-90),
+          last_checked: dateStr(-90),
           expiry_date: dateStr(730),
-          status: 'serviceable',
+          status: 'active',
           notes: 'Emergency Position Indicating Radio Beacon',
         }])
       }
@@ -1342,11 +1409,13 @@ async function main() {
       await supabase.from('safety_equipment').insert([{
         company_id: companyId,
         boat_id: boatId,
-        equipment_type: 'medical_kit',
+        added_by_user_id: adminUserId,
+        name: 'First aid/Medical kit',
+        category: 'medical_kit',
         quantity: 1,
-        last_inspected: dateStr(-20),
+        last_checked: dateStr(-20),
         expiry_date: dateStr(365),
-        status: 'serviceable',
+        status: 'active',
         notes: 'First aid kit with marine-specific supplies',
       }])
 
@@ -1355,11 +1424,13 @@ async function main() {
         await supabase.from('safety_equipment').insert([{
           company_id: companyId,
           boat_id: boatId,
-          equipment_type: 'harness',
+          added_by_user_id: adminUserId,
+          name: 'Safety harnesses (4 units)',
+          category: 'harness',
           quantity: 4,
-          last_inspected: dateStr(-15),
+          last_checked: dateStr(-15),
           expiry_date: dateStr(1095),
-          status: 'serviceable',
+          status: 'active',
           notes: 'Safety harnesses for deck work',
         }])
       }
@@ -1375,33 +1446,36 @@ async function main() {
       await supabase.from('fleet_documents').insert([{
         company_id: companyId,
         boat_id: boatId,
+        uploaded_by_user_id: adminUserId,
+        name: `${boat.name} - Registration Certificate`,
         document_type: 'registration',
-        document_name: `${boat.name} - Registration Certificate`,
-        document_url: `https://storage.happysail.es/docs/${boat.name.replace(/\s+/g, '_')}/registration.pdf`,
-        upload_date: dateStr(-365),
+        file_url: `https://storage.happysail.es/docs/${boat.name.replace(/\s+/g, '_')}/registration.pdf`,
         expiry_date: dateStr(1095),
+        status: 'active',
       }])
 
       // Insurance certificate
       await supabase.from('fleet_documents').insert([{
         company_id: companyId,
         boat_id: boatId,
+        uploaded_by_user_id: adminUserId,
+        name: `${boat.name} - Insurance Certificate 2025`,
         document_type: 'insurance',
-        document_name: `${boat.name} - Insurance Certificate 2025`,
-        document_url: `https://storage.happysail.es/docs/${boat.name.replace(/\s+/g, '_')}/insurance.pdf`,
-        upload_date: dateStr(-30),
+        file_url: `https://storage.happysail.es/docs/${boat.name.replace(/\s+/g, '_')}/insurance.pdf`,
         expiry_date: '2025-12-31',
+        status: 'active',
       }])
 
       // Safety certificate
       await supabase.from('fleet_documents').insert([{
         company_id: companyId,
         boat_id: boatId,
+        uploaded_by_user_id: adminUserId,
+        name: `${boat.name} - Safety Certificate`,
         document_type: 'safety_certificate',
-        document_name: `${boat.name} - Safety Certificate`,
-        document_url: `https://storage.happysail.es/docs/${boat.name.replace(/\s+/g, '_')}/safety.pdf`,
-        upload_date: dateStr(-90),
+        file_url: `https://storage.happysail.es/docs/${boat.name.replace(/\s+/g, '_')}/safety.pdf`,
         expiry_date: dateStr(730),
+        status: 'active',
       }])
 
       // Survey report (sailboat only)
@@ -1409,11 +1483,12 @@ async function main() {
         await supabase.from('fleet_documents').insert([{
           company_id: companyId,
           boat_id: boatId,
+          uploaded_by_user_id: adminUserId,
+          name: `${boat.name} - Survey Report 2024`,
           document_type: 'survey',
-          document_name: `${boat.name} - Survey Report 2024`,
-          document_url: `https://storage.happysail.es/docs/${boat.name.replace(/\s+/g, '_')}/survey.pdf`,
-          upload_date: dateStr(-180),
+          file_url: `https://storage.happysail.es/docs/${boat.name.replace(/\s+/g, '_')}/survey.pdf`,
           expiry_date: dateStr(730),
+          status: 'active',
         }])
       }
       console.log(`   Documents for ${boat.name}: created`)

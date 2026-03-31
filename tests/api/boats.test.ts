@@ -4,7 +4,7 @@
 
 import { describe, it, expect, afterAll } from 'vitest'
 import { createApiClient, TEST_PREFIX, runCleanup, registerCleanup } from './helpers/client'
-import { adminSupabase, deleteByNamePrefix } from './helpers/supabase'
+import { adminSupabase, deleteByNamePrefix, getFirstBoat } from './helpers/supabase'
 
 const boatName = `${TEST_PREFIX} Test Boat`
 let createdBoatId: string | null = null
@@ -165,26 +165,20 @@ describe('Boats API', () => {
 
   describe('DELETE /api/boats/delete', () => {
     it('returns 400 when trying to delete a boat with bookings', async () => {
-      // Use a real demo boat (has bookings), should fail
-      const { data: boats } = await adminSupabase
-        .from('boats')
-        .select('id')
-        .limit(1)
-        .single()
-
-      if (!boats) return // skip if no boats
+      // Use the first demo boat (filtered to demo company so RLS matches)
+      const boat = await getFirstBoat()
 
       // Check if it has bookings
       const { data: bookings } = await adminSupabase
         .from('bookings')
         .select('id')
-        .eq('boat_id', boats.id)
+        .eq('boat_id', boat.id)
         .limit(1)
 
       if (!bookings?.length) return // skip - no bookings to test with
 
       const api = await createApiClient('admin')
-      const res = await api.delete('/api/boats/delete', { id: boats.id })
+      const res = await api.delete('/api/boats/delete', { id: boat.id })
       expect(res.status).toBe(400)
       expect((res.body as any).error).toMatch(/booking/i)
     })

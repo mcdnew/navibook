@@ -17,12 +17,12 @@ export const adminSupabase = createClient(
 /** Get the company_id for the demo company */
 export async function getDemoCompanyId(): Promise<string> {
   const { data, error } = await adminSupabase
-    .from('companies')
-    .select('id')
-    .eq('name', 'Happy Sail Estepona')
+    .from('users')
+    .select('company_id')
+    .eq('email', 'admin@happysail.es')
     .single()
   if (error || !data) throw new Error('Demo company not found')
-  return data.id
+  return data.company_id
 }
 
 /** Get a user by email */

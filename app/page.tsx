@@ -1,122 +1,162 @@
 import { createClient } from '@/lib/supabase/server'
+import { Calendar, BarChart3, Shield, Zap, Users, Anchor } from 'lucide-react'
 
 export default async function Home() {
   const supabase = await createClient()
-
-  // Fetch boats from database
-  const { data: boats, error } = await supabase
-    .from('boats')
-    .select('*')
-    .order('name')
 
   const { data: company } = await supabase
     .from('companies')
     .select('name')
     .single()
 
+  const features = [
+    {
+      icon: Calendar,
+      title: 'Smart Booking Engine',
+      description: 'Real-time availability, instant confirmations, and automated scheduling',
+    },
+    {
+      icon: BarChart3,
+      title: 'Revenue Analytics',
+      description: 'Track profitability per boat, monitor operational costs, and analyze trends',
+    },
+    {
+      icon: Users,
+      title: 'Team Management',
+      description: 'Assign captains, track crew assignments, and manage commissions seamlessly',
+    },
+    {
+      icon: Anchor,
+      title: 'Fleet Operations',
+      description: 'Maintenance logs, fuel tracking, safety equipment, and fleet compliance',
+    },
+    {
+      icon: Shield,
+      title: 'Enterprise Security',
+      description: 'Row-level security, encrypted data, and role-based access control',
+    },
+    {
+      icon: Zap,
+      title: 'Real-time Sync',
+      description: 'Live updates across all devices, instant notifications, and sync on demand',
+    },
+  ]
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-gradient-to-b from-blue-50 to-white">
-      <div className="text-center space-y-6 max-w-4xl">
-        <div className="space-y-2">
-          <h1 className="text-5xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-            NaviBook
-          </h1>
-          <p className="text-xl text-muted-foreground">
-            Day-Charter Management System
+    <main className="min-h-screen bg-white">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden bg-gradient-to-b from-slate-900 via-slate-800 to-white px-6 py-32 sm:py-48">
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl"></div>
+        </div>
+
+        <div className="relative max-w-5xl mx-auto text-center space-y-8">
+          <div className="space-y-4">
+            <h1 className="text-6xl sm:text-7xl font-bold tracking-tight">
+              <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent">
+                NaviBook
+              </span>
+            </h1>
+            <p className="text-2xl text-slate-300 font-light">
+              Complete Day-Charter Management Platform
+            </p>
+          </div>
+
+          <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+            Streamline bookings, optimize fleet operations, and maximize revenue with intelligent scheduling and real-time analytics.
           </p>
-          {company && (
-            <p className="text-sm text-muted-foreground">
-              {company.name}
-            </p>
-          )}
-        </div>
 
-        <div className="flex gap-4 justify-center pt-4">
-          <div className="px-6 py-3 bg-green-100 text-green-700 rounded-lg border border-green-200">
-            <p className="text-sm font-medium">✅ Database Connected</p>
-          </div>
-          <div className="px-6 py-3 bg-blue-100 text-blue-700 rounded-lg border border-blue-200">
-            <p className="text-sm font-medium">✅ Realtime Enabled</p>
-          </div>
-        </div>
-
-        {error && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-600 text-sm">Error: {error.message}</p>
-          </div>
-        )}
-
-        {boats && boats.length > 0 && (
-          <div className="pt-6">
-            <h2 className="text-2xl font-semibold mb-4">Fleet Status</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {boats.map((boat) => (
-                <div
-                  key={boat.id}
-                  className="p-4 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-semibold text-lg">{boat.name}</h3>
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      boat.is_active
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-100 text-gray-700'
-                    }`}>
-                      {boat.is_active ? 'Active' : 'Inactive'}
-                    </span>
-                  </div>
-                  <div className="space-y-1 text-sm text-muted-foreground">
-                    <p className="capitalize">
-                      🚤 {boat.boat_type.replace('_', ' ')}
-                    </p>
-                    <p>👥 Capacity: {boat.capacity} passengers</p>
-                    {boat.description && (
-                      <p className="text-xs pt-2">{boat.description}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="pt-8 space-y-3">
-          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <p className="font-semibold mb-2">🎉 Setup Complete!</p>
-            <p className="text-sm text-muted-foreground mb-3">
-              Your NaviBook system is ready. Login to start managing bookings.
-            </p>
-            <div className="space-y-1 text-sm">
-              <p><strong>Email:</strong> admin@navibook.com</p>
-              <p><strong>Password:</strong> Admin123!</p>
-              <p className="text-xs text-amber-600 pt-2">
-                ⚠️ Change password after first login
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-3 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
             <a
               href="/login"
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              className="px-8 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-blue-500/50 transition-all duration-300"
             >
-              Login
+              Get Started
             </a>
             <a
               href="/register"
-              className="px-6 py-2 bg-white text-blue-600 rounded-lg hover:bg-gray-50 transition-colors font-medium border border-blue-200"
+              className="px-8 py-3 bg-slate-700 text-white rounded-lg font-semibold hover:bg-slate-600 transition-colors"
             >
-              Register
+              Request Demo
             </a>
           </div>
         </div>
+      </section>
 
-        <div className="pt-6 text-xs text-muted-foreground space-y-1">
-          <p>📊 Database: {boats?.length || 0} boats configured</p>
-          <p>🔒 Security: Row Level Security (RLS) enabled</p>
-          <p>⚡ Real-time: Live booking updates active</p>
+      {/* Features Grid */}
+      <section className="max-w-6xl mx-auto px-6 py-20">
+        <div className="text-center space-y-4 mb-16">
+          <h2 className="text-4xl font-bold text-slate-900">Powerful Features</h2>
+          <p className="text-lg text-slate-600">Everything you need to run a modern charter business</p>
         </div>
-      </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {features.map((feature, idx) => {
+            const Icon = feature.icon
+            return (
+              <div
+                key={idx}
+                className="group relative p-8 rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white hover:border-blue-300 hover:shadow-lg transition-all duration-300"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-cyan-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="relative space-y-4">
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                    <Icon className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-slate-900">{feature.title}</h3>
+                  <p className="text-slate-600">{feature.description}</p>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="bg-gradient-to-r from-slate-50 to-blue-50 px-6 py-20">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+            <div className="space-y-2">
+              <div className="text-4xl font-bold text-blue-600">100%</div>
+              <p className="text-slate-600 font-medium">Uptime SLA</p>
+            </div>
+            <div className="space-y-2">
+              <div className="text-4xl font-bold text-cyan-600">Real-time</div>
+              <p className="text-slate-600 font-medium">Data Sync</p>
+            </div>
+            <div className="space-y-2">
+              <div className="text-4xl font-bold text-emerald-600">Enterprise</div>
+              <p className="text-slate-600 font-medium">Grade Security</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="max-w-4xl mx-auto px-6 py-20 text-center space-y-8">
+        <h2 className="text-4xl font-bold text-slate-900">Ready to Transform Your Business?</h2>
+        <p className="text-lg text-slate-600">Join charter operators who trust NaviBook to run their operations.</p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <a
+            href="/login"
+            className="px-8 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+          >
+            Login to Dashboard
+          </a>
+          <a
+            href="/register"
+            className="px-8 py-3 border-2 border-blue-600 text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
+          >
+            Create Account
+          </a>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-slate-200 bg-slate-50 px-6 py-8 text-center text-sm text-slate-600">
+        <p>NaviBook © 2026 • {company?.name}</p>
+      </footer>
     </main>
   )
 }

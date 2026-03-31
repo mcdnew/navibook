@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import Link from 'next/link'
-import { ArrowLeft, Settings, Building2, Ship, Fuel, Zap, Banknote, AlertCircle, Users, Calendar, Key } from 'lucide-react'
+import { ArrowLeft, Settings, Building2, Ship, Fuel, Zap, Banknote, AlertCircle, Users, Calendar, Key, Wrench } from 'lucide-react'
 
 export default async function SettingsPage() {
   const supabase = await createClient()
@@ -21,6 +21,14 @@ export default async function SettingsPage() {
   if (!userData) redirect('/login')
 
   const isAdmin = userData.role === 'admin' || userData.role === 'operations_manager' || userData.role === 'office_staff'
+
+  const { data: companyData } = await supabase
+    .from('companies')
+    .select('fleet_module_enabled')
+    .eq('id', userData.company_id)
+    .single()
+
+  const fleetModuleEnabled = companyData?.fleet_module_enabled ?? false
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -134,6 +142,34 @@ export default async function SettingsPage() {
               <CardContent>
                 <Button asChild className="w-full bg-orange-600 hover:bg-orange-700" disabled={!isAdmin}>
                   <Link href="/fleet/fuel-config">Configure</Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Fleet Operations Module */}
+            <Card className="hover:shadow-lg transition-shadow border-blue-200 dark:border-blue-800">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Wrench className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  Fleet Operations Module
+                  {fleetModuleEnabled && (
+                    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Active</span>
+                  )}
+                </CardTitle>
+                <CardDescription>
+                  {fleetModuleEnabled
+                    ? 'Maintenance scheduling, fuel logs, expenses, safety equipment and P&L reporting are enabled.'
+                    : 'Enable maintenance scheduling, fuel logs, expenses, safety equipment tracking and P&L reporting per boat.'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {fleetModuleEnabled && (
+                  <Button asChild className="w-full" variant="outline">
+                    <Link href="/fleet/boats">Fleet Intelligence</Link>
+                  </Button>
+                )}
+                <Button asChild className="w-full" variant={fleetModuleEnabled ? 'outline' : 'default'} disabled={!isAdmin}>
+                  <Link href="/settings/fleet">{fleetModuleEnabled ? 'Module Settings' : 'Enable Module'}</Link>
                 </Button>
               </CardContent>
             </Card>

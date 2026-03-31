@@ -8,7 +8,6 @@ import { TEST_PREFIX } from './helpers/client'
 import {
   adminSupabase,
   getDemoCompanyId,
-  getFirstBoat,
   deleteByNamePrefix,
 } from './helpers/supabase'
 import { generateApiKey } from '../../lib/api-keys'
@@ -60,8 +59,23 @@ async function apiV1(
 
 beforeAll(async () => {
   companyId = await getDemoCompanyId()
-  const boat = await getFirstBoat()
-  boatId = boat.id
+
+  // Find a boat in the demo company that has charter_only/4h pricing (needed for POST /api/v1/bookings)
+  const { data: companyBoats } = await adminSupabase
+    .from('boats')
+    .select('id')
+    .eq('company_id', companyId)
+    .eq('is_active', true)
+  const boatIds = companyBoats?.map((b: { id: string }) => b.id) ?? []
+  const { data: pricedBoats } = await adminSupabase
+    .from('pricing')
+    .select('boat_id')
+    .in('boat_id', boatIds)
+    .eq('duration', '4h')
+    .eq('package_type', 'charter_only')
+    .limit(1)
+  if (!pricedBoats?.length) throw new Error('No boat with charter_only/4h pricing found in demo company')
+  boatId = pricedBoats[0].boat_id
 
   // Create a real API key
   const { rawKey, keyHash, keyPrefix } = generateApiKey()

@@ -1,6 +1,6 @@
 # NaviBook - Day-Charter Boat Rental Management System
 
-A complete web-based reservation management system for Mediterranean day-charter boat rental companies. Features real-time availability, mobile-first booking interface, commission tracking, and weather integration.
+A complete web-based reservation management system for Mediterranean day-charter boat rental companies. Features real-time availability, mobile-first booking interface, commission tracking, weather integration, and fleet operations management.
 
 ## 🚀 Features
 

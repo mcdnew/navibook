@@ -16,6 +16,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { Calendar as CalendarIcon, Ship, User, Clock } from 'lucide-react'
+import { getStatusHex, BOOKING_STATUS_COLORS } from '@/lib/booking-status-colors'
+import type { BookingStatus } from '@/lib/booking-status-colors'
 
 // Setup the localizer for react-big-calendar
 const locales = {
@@ -69,14 +71,11 @@ interface CalendarClientProps {
   boats: Boat[]
 }
 
-// Status colors
-const STATUS_COLORS = {
-  confirmed: { bg: '#10b981', text: '#ffffff' },
-  pending_hold: { bg: '#f59e0b', text: '#ffffff' },
-  completed: { bg: '#6366f1', text: '#ffffff' },
-  cancelled: { bg: '#ef4444', text: '#ffffff' },
-  no_show: { bg: '#9ca3af', text: '#ffffff' },
-}
+// Status colors (using centralized color scheme for consistency)
+const STATUS_COLORS = Object.entries(BOOKING_STATUS_COLORS).reduce((acc, [status, styles]) => {
+  acc[status] = { bg: styles.hex, text: '#ffffff' }
+  return acc
+}, {} as Record<string, { bg: string; text: string }>)
 
 // Generate boat colors
 const BOAT_COLORS = [

@@ -15,6 +15,8 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import Link from 'next/link'
 import { Eye, Search, Anchor, Ship, Calendar as CalendarIcon, Users, X, Filter } from 'lucide-react'
 import { format } from 'date-fns'
+import { getStatusStyles } from '@/lib/booking-status-colors'
+import type { BookingStatus } from '@/lib/booking-status-colors'
 
 interface Booking {
   id: string
@@ -307,23 +309,14 @@ export default function BookingsListClient({
                     </div>
                   </div>
                   <div className="flex flex-row md:flex-col items-center gap-2">
-                    <span
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide ${
-                        booking.status === 'confirmed'
-                          ? 'bg-secondary/20 text-secondary-foreground'
-                          : booking.status === 'pending_hold'
-                          ? 'bg-accent/20 text-accent-foreground'
-                          : booking.status === 'completed'
-                          ? 'bg-primary/20 text-primary'
-                          : booking.status === 'cancelled'
-                          ? 'bg-destructive/20 text-destructive'
-                          : booking.status === 'no_show'
-                          ? 'bg-muted text-muted-foreground'
-                          : 'bg-muted text-muted-foreground'
-                      }`}
-                    >
-                      {booking.status.replace('_', ' ')}
-                    </span>
+                    {(() => {
+                      const styles = getStatusStyles(booking.status as BookingStatus)
+                      return (
+                        <span className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide ${styles.bg} ${styles.text}`}>
+                          {styles.label}
+                        </span>
+                      )
+                    })()}
                     <Button variant="outline" size="sm" asChild className="gap-2">
                       <Link href={`/bookings/${booking.id}`}>
                         <Eye className="w-4 h-4" />

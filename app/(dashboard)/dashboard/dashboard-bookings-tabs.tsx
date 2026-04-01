@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge'
 import { Anchor, Calendar, Clock, AlertCircle, Sparkles, TrendingUp } from 'lucide-react'
 import { format, isPast, addHours } from 'date-fns'
 import Link from 'next/link'
+import { getStatusStyles } from '@/lib/booking-status-colors'
+import type { BookingStatus } from '@/lib/booking-status-colors'
 
 interface Booking {
   id: string
@@ -59,14 +61,8 @@ export default function DashboardBookingsTabs() {
   }, [])
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, string> = {
-      confirmed: 'bg-green-100 text-green-700',
-      pending_hold: 'bg-orange-100 text-orange-700',
-      completed: 'bg-blue-100 text-blue-700',
-      cancelled: 'bg-red-100 text-red-700',
-      no_show: 'bg-gray-100 text-gray-700',
-    }
-    return variants[status] || 'bg-gray-100 text-gray-700'
+    const styles = getStatusStyles(status as BookingStatus)
+    return `${styles.bg} ${styles.text}`
   }
 
   const getUrgencyType = (booking: Booking): { type: string; message: string } => {

@@ -24,6 +24,8 @@ import {
   UserCheck,
   UserX,
 } from 'lucide-react'
+import { getStatusStyles } from '@/lib/booking-status-colors'
+import type { BookingStatus } from '@/lib/booking-status-colors'
 import BookingActions from './booking-actions'
 import BookingHistoryTimeline from './booking-history-timeline'
 import PricingSummary from './pricing-summary'
@@ -158,21 +160,21 @@ export default async function BookingDetailPage({
 
   // Helper function to format status
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, { color: string; icon: any }> = {
-      pending_hold: { color: 'bg-orange-100 text-orange-700', icon: Clock3 },
-      confirmed: { color: 'bg-green-100 text-green-700', icon: CheckCircle2 },
-      completed: { color: 'bg-blue-100 text-blue-700', icon: UserCheck },
-      cancelled: { color: 'bg-red-100 text-red-700', icon: XCircle },
-      no_show: { color: 'bg-gray-100 text-gray-700', icon: UserX },
+    const iconMap: Record<string, any> = {
+      pending_hold: Clock3,
+      confirmed: CheckCircle2,
+      completed: UserCheck,
+      cancelled: XCircle,
+      no_show: UserX,
     }
 
-    const variant = variants[status] || variants.pending_hold
-    const Icon = variant.icon
+    const styles = getStatusStyles(status as BookingStatus)
+    const Icon = iconMap[status] || Clock3
 
     return (
-      <Badge className={`${variant.color} flex items-center gap-1 px-3 py-1`}>
+      <Badge className={`${styles.bg} ${styles.text} flex items-center gap-1 px-3 py-1`}>
         <Icon className="w-3 h-3" />
-        {status.replace('_', ' ').toUpperCase()}
+        {styles.label.toUpperCase()}
       </Badge>
     )
   }
